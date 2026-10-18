@@ -1,4 +1,4 @@
-# SUB-SPACETIME STUDIO // v9.0 Masterpiece Edition
+# SUB-SPACETIME STUDIO // Math-piece Edition
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-00e5ff.svg)](./LICENSE)
 [![Engine: WebGL2 / GLSL](https://img.shields.io/badge/WebGL2%20%2F%20GLSL-60%20FPS%20ACES%20Filmic-38bdf8.svg)](https://spacetime.clipboard-share.com/)
