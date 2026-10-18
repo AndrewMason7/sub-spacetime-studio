@@ -33,10 +33,12 @@ const DEFAULT_UNIFORMS: SimulationUniformState = {
   calabiYauSlice: 1.57
 };
 
+const SINGLETON_AUDIO = AudioSynthesizer.getInstance();
+
 const WorkstationApp: React.FC = () => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<QuantumSpacetimeEngine | null>(null);
-  const audioRef = useRef<AudioSynthesizer>(new AudioSynthesizer());
+  const audioRef = useRef<AudioSynthesizer>(SINGLETON_AUDIO);
   const animTokenMapRef = useRef<Record<string, number>>({});
 
   const [activeMode, setActiveMode] = useState<SceneModeId>('observer');
@@ -99,6 +101,18 @@ const WorkstationApp: React.FC = () => {
       engine.dispose();
       audioRef.current.dispose();
     };
+  }, []);
+
+  const handleToggleMute = useCallback(() => {
+    setIsMuted((prev) => {
+      const next = !prev;
+      audioRef.current.setMuted(next);
+      return next;
+    });
+  }, []);
+
+  const handleCameraPreset = useCallback((preset: CameraPresetId) => {
+    engineRef.current?.setCameraPreset(preset);
   }, []);
 
   const handleZoomIn = useCallback(() => {
@@ -258,14 +272,20 @@ const WorkstationApp: React.FC = () => {
 
   const {
     isDirectorRunning,
+    tourActIndex,
+    tourProgressPct,
     tourStatusText,
+    tourNarration,
     startDirectorTour,
+    jumpToTourAct,
     stopDirectorTour
   } = useDirectorTour({
     onInitAudio: () => audioRef.current.init(),
     onSelectMode: handleSelectMode,
     onChangeUniform: handleChangeUniform,
-    onAnimateUniform: animateUniform
+    onAnimateUniform: animateUniform,
+    onCameraPreset: handleCameraPreset,
+    onHighlightSlider: setHighlightedSliderIdx
   });
 
   const handleResetUniforms = useCallback(() => {
@@ -309,7 +329,8 @@ const WorkstationApp: React.FC = () => {
     onResetUniforms: handleResetUniforms,
     onTogglePause: handleTogglePause,
     onToggleGrid: handleToggleGrid,
-    onToggleAutoRotate: handleToggleAutoRotate
+    onToggleAutoRotate: handleToggleAutoRotate,
+    onToggleMute: handleToggleMute
   });
 
   const handleCaptureFrame = useCallback(() => {
@@ -349,7 +370,7 @@ const WorkstationApp: React.FC = () => {
         activeMode={activeMode}
         meta={meta}
         uniforms={uniforms}
-        onCameraPreset={(p: CameraPresetId) => engineRef.current?.setCameraPreset(p)}
+        onCameraPreset={handleCameraPreset}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         zoomPct={zoomPct}
@@ -363,6 +384,14 @@ const WorkstationApp: React.FC = () => {
         sideRacksHidden={sideRacksHidden}
         onToggleSideRacksHidden={() => setSideRacksHidden((s) => !s)}
         onSelectMode={handleSelectMode}
+        isDirectorRunning={isDirectorRunning}
+        tourActIndex={tourActIndex}
+        tourProgressPct={tourProgressPct}
+        tourNarration={tourNarration}
+        onJumpToTourAct={jumpToTourAct}
+        onStopDirectorTour={stopDirectorTour}
+        isMuted={isMuted}
+        onToggleMute={handleToggleMute}
       />
 
       {!dashboardHidden && (
@@ -374,17 +403,12 @@ const WorkstationApp: React.FC = () => {
           }}
           isDirectorRunning={isDirectorRunning}
           onToggleDirector={() =>
-            isDirectorRunning ? stopDirectorTour() : startDirectorTour()
+            isDirectorRunning ? stopDirectorTour() : startDirectorTour(0)
           }
           isMuted={isMuted}
-          onToggleMute={() => {
-            audioRef.current.init();
-            const next = !isMuted;
-            setIsMuted(next);
-            audioRef.current.setMuted(next);
-          }}
+          onToggleMute={handleToggleMute}
           onOpenCommandPalette={() => setCmdOpen(true)}
-          onCameraPreset={(p: CameraPresetId) => engineRef.current?.setCameraPreset(p)}
+          onCameraPreset={handleCameraPreset}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onResetUniforms={handleResetUniforms}

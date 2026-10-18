@@ -102,7 +102,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         <div className="ws-logo-mark">Ψ</div>
         <div className="ws-brand-stack">
           <span className="ws-app-name">SUB-SPACETIME</span>
-          <span className="ws-version-tag">CLASSIFIED // v7.2</span>
+          <span className="ws-version-tag">MASTERPIECE // v8.5</span>
         </div>
 
         <div className="deck-divider" />
@@ -338,29 +338,30 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
           <span>{isDirectorRunning ? 'STOP' : 'TOUR'}</span>
         </motion.button>
 
-        <motion.button
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.95 }}
+        <button
+          type="button"
           className="ws-btn"
-          onClick={onToggleMute}
-          title="Toggle Quantum Harmonic Audio"
+          data-mute-toggle="true"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleMute();
+          }}
+          title="Mute / Unmute Studio Soundtrack Audio (Shortcut: M)"
           style={{
-            borderColor: isMuted ? 'rgba(244, 63, 94, 0.35)' : 'rgba(52, 211, 153, 0.45)',
-            color: isMuted ? '#fda4af' : '#6ee7b7'
+            borderColor: isMuted ? 'rgba(244, 63, 94, 0.45)' : 'rgba(52, 211, 153, 0.5)',
+            background: isMuted ? 'rgba(244, 63, 94, 0.16)' : 'rgba(52, 211, 153, 0.14)',
+            color: isMuted ? '#fda4af' : '#6ee7b7',
+            cursor: 'pointer'
           }}
         >
           {isMuted ? (
-            <>
-              <VolumeX size={13} strokeWidth={1.5} color="#f43f5e" />
-              <span>MUTED</span>
-            </>
+            <VolumeX size={13} strokeWidth={1.5} color="#f43f5e" />
           ) : (
-            <>
-              <Volume2 size={13} strokeWidth={1.5} color="#34d399" />
-              <span>AUDIO</span>
-            </>
+            <Volume2 size={13} strokeWidth={1.5} color="#34d399" />
           )}
-        </motion.button>
+          <span>{isMuted ? 'MUTED' : 'AUDIO'}</span>
+        </button>
       </div>
     </header>
   );
