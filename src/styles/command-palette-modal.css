@@ -1,0 +1,102 @@
+/**
+ * DOMAIN 7: RAYCAST-STYLE COMMAND PALETTE MODAL (CommandPaletteModal.tsx)
+ */
+.ws-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 4, 8, 0.72);
+  backdrop-filter: blur(10px);
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 80px;
+}
+
+.ws-cmd-modal {
+  width: 580px;
+  background: var(--bg-glass-elevated);
+  backdrop-filter: blur(30px);
+  border-radius: 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 28px 68px rgba(0, 0, 0, 0.92);
+  overflow: hidden;
+}
+
+.ws-cmd-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-specular);
+}
+
+.ws-cmd-input-row input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.ws-cmd-input-row kbd {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-muted);
+}
+
+.ws-cmd-results {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.ws-cmd-group {
+  margin-bottom: 8px;
+}
+
+.ws-cmd-group-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 4px 8px;
+}
+
+.ws-cmd-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+}
+
+.ws-cmd-item:hover,
+.ws-cmd-item.selected {
+  background: var(--bg-surface-hover);
+  box-shadow: inset 2px 0 0 var(--accent-ice);
+}
+
+.ws-cmd-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ws-cmd-item-code {
+  font-weight: 700;
+}

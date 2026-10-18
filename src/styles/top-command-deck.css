@@ -1,0 +1,303 @@
+/**
+ * DOMAIN 2: TOP FLOATING COMMAND DECK & MENUS (TopMenuBar.tsx)
+ */
+.floating-command-deck {
+  position: fixed;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  height: 38px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.deck-pill-pod {
+  pointer-events: auto;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--bg-glass-pill);
+  backdrop-filter: blur(24px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 14px 36px rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ws-window-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 2px;
+  cursor: pointer;
+}
+
+.ws-window-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  opacity: 0.85;
+}
+
+.dot-close { background: #ef4444; }
+.dot-min { background: #f59e0b; }
+.dot-max { background: #10b981; }
+
+.ws-logo-mark {
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(125, 211, 252, 0.2), rgba(192, 132, 252, 0.14));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 2px 8px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--accent-ice);
+  flex-shrink: 0;
+}
+
+.ws-brand-stack {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.ws-app-name {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #f8fafc;
+}
+
+.ws-version-tag {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  color: var(--accent-ice);
+  opacity: 0.85;
+}
+
+.deck-divider {
+  width: 1px;
+  height: 15px;
+  background: var(--border-specular);
+  margin: 0 2px;
+}
+
+.ws-menu-item-wrap {
+  position: relative;
+}
+
+.ws-menu-trigger {
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 4px 7px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ws-menu-trigger:hover,
+.ws-menu-trigger.open {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.ws-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 265px;
+  background: var(--bg-glass-elevated);
+  backdrop-filter: blur(28px);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 24px 56px rgba(0, 0, 0, 0.88);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+.ws-dropdown button {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ws-dropdown button:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  color: var(--accent-ice);
+}
+
+.ws-dropdown button kbd {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.ws-dropdown-divider {
+  height: 1px;
+  background: var(--border-specular);
+  margin: 4px 0;
+}
+
+.module-selector-pod {
+  padding: 3px 4px;
+  gap: 3px;
+}
+
+.deck-module-pill {
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  height: 28px;
+  padding: 0 10px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.deck-module-pill:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.deck-module-pill.active {
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0 0 1px var(--pill-accent, var(--accent-ice));
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.pill-led-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pill-idx {
+  font-size: 8px;
+  color: var(--text-muted);
+}
+
+.raycast-palette-pill {
+  pointer-events: auto;
+  height: 36px;
+  padding: 0 11px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(7, 11, 20, 0.8);
+  backdrop-filter: blur(24px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 1px rgba(125, 211, 252, 0.22),
+    0 14px 36px rgba(0, 0, 0, 0.72);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.raycast-palette-pill:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 0 0 1px rgba(125, 211, 252, 0.45),
+    0 14px 36px rgba(0, 0, 0, 0.8);
+  color: #ffffff;
+}
+
+.raycast-placeholder {
+  white-space: nowrap;
+}
+
+.raycast-kbd {
+  background: rgba(125, 211, 252, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.28);
+  color: var(--accent-ice);
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.ws-btn {
+  height: 26px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(20, 29, 47, 0.78);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ws-btn-primary {
+  background: linear-gradient(180deg, rgba(125, 211, 252, 0.2) 0%, rgba(56, 189, 248, 0.08) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 0 0 1px rgba(125, 211, 252, 0.42);
+  color: var(--accent-ice);
+}
+
+.ws-btn-primary.active-sequence {
+  background: linear-gradient(180deg, rgba(244, 63, 94, 0.28) 0%, rgba(244, 63, 94, 0.12) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 0 0 1px rgba(244, 63, 94, 0.55);
+  color: #fda4af;
+}
