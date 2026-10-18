@@ -47,9 +47,9 @@
 
 Recent breakthroughs across quantum gravity, differential topology, and machine-assisted mathematics have exposed a sharp epistemological boundary between **informal natural-language derivations** and **machine-checked formal proofs** (`Lean 4 / Mathlib4`). Across an extensive audit of **722 mathematical physics and pure mathematics manuscripts** (`openai/math`, spanning **2,924 Lean 4 modules**), exactly **162 manuscripts (`22.4%`)** carry complete, zero-`sorry` Lean 4 formalizations, while **560 (`77.6%`)** remain unverified PDF drafts.
 
-Most strikingly, when three high-profile algebraic geometry manuscripts claiming proofs of the **Rational Hodge Conjecture for Products of K3 Surfaces**, **Kuga–Satake Correspondences**, and **Algebraicity of Weil Classes on Split Abelian Eightfolds** were scrutinized (October 6–7, 2026), all three collapsed overnight due to a single sign inversion in a Lagrangian cusp stabilization trace:
-$$\text{Assumed: } \sigma_{\text{trace}} = +1 \implies I_{\text{new}} = -m + m = 0$$
-$$\text{Reality: } \sigma_{\text{trace}} = -1 \implies I_{\text{new}} = I(f_1) - m = -2m \neq 0$$
+Most strikingly, when three high-profile algebraic geometry manuscripts claiming proofs of the Rational Hodge Conjecture for Products of K3 Surfaces, Kuga–Satake Correspondences, and Algebraicity of Weil Classes on Split Abelian Eightfolds were scrutinized (October 6–7, 2026), all three collapsed overnight due to a single sign inversion in a Lagrangian cusp stabilization trace:
+Assumed: σ_trace = +1 ⟹ I_new = -m + m = 0
+Reality: σ_trace = -1 ⟹ I_new = I(f_1) - m = -2m ≠ 0
 
 Because the **Eliashberg–Murphy Lagrangian surgery and cancellation theorem** requires an exact vanishing double-point count ($I_{\text{new}} = 0$), the orientation clash invalidates the hypothesis entirely—an arithmetic contradiction that Lean 4's `omega` decision tactic proves in **0.01 seconds**. In stark contrast, every theorem in the corpus verified with machine-checked Lean 4 formal proofs survived 100% intact.
 
