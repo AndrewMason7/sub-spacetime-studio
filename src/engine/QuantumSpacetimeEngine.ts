@@ -19,10 +19,6 @@ import { createWillowHologramScene, WillowHologramHandles } from './shaders/will
 import { createK3RetractionScene, K3RetractionHandles } from './shaders/k3RetractionShader';
 import { ManifoldGlbArticulator } from './ManifoldGlbArticulator';
 
-/**
- * Calibrated base scale per scene so all 4 manifolds occupy an identical visual bounding sphere
- * — zero overlap with bottom toolbars and zero sudden size jumps when switching modules!
- */
 const SCENE_BASE_SCALES: Record<SceneModeId, number> = {
   observer: 0.84,
   fkcrt: 0.84,
@@ -65,6 +61,8 @@ export class QuantumSpacetimeEngine {
   public timeScale = 1.0;
   private shockwavePulse = 0.0;
   private cameraAnimToken = 0;
+  private isDirectorTourActive = false;
+  private directorTourTime = 0.0;
 
   public fps = 60.0;
   private frameCount = 0;
@@ -249,7 +247,7 @@ export class QuantumSpacetimeEngine {
     this.activeMode = mode;
     this.triggerShockwave();
 
-    if (!isSame) {
+    if (!isSame && !this.isDirectorTourActive) {
       const token = ++this.cameraAnimToken;
       const startPos = this.camera.position.clone();
       const targetCenter = new THREE.Vector3(0, 0, 0);
@@ -340,6 +338,23 @@ export class QuantumSpacetimeEngine {
     this.controls.autoRotate = enabled;
   }
 
+  public setDirectorTourMode(active: boolean): void {
+    this.isDirectorTourActive = active;
+    if (!active) {
+      const groups = [
+        this.observerHandles.group,
+        this.fkcrtHandles.group,
+        this.willowHandles.group,
+        this.k3Handles.group
+      ];
+      for (const g of groups) {
+        g.rotation.x = 0;
+        g.rotation.z = 0;
+      }
+      this.setCameraPreset('perspective');
+    }
+  }
+
   public getSimTime(): number {
     return this.simTime;
   }
@@ -412,7 +427,15 @@ export class QuantumSpacetimeEngine {
 
     if (this.observerHandles.group.visible) {
       const swirl = (1 - this.modePresence.observer) * 0.9;
-      this.observerHandles.group.rotation.y = swirl;
+      if (this.isDirectorTourActive) {
+        this.observerHandles.group.rotation.y = elapsed * 0.65 + swirl;
+        this.observerHandles.group.rotation.x = Math.sin(this.directorTourTime * 0.85) * 0.65;
+        this.observerHandles.group.rotation.z = Math.cos(this.directorTourTime * 0.58) * 0.45;
+      } else {
+        this.observerHandles.group.rotation.y = swirl;
+        this.observerHandles.group.rotation.x *= 0.9;
+        this.observerHandles.group.rotation.z *= 0.9;
+      }
       this.observerHandles.particlesMat.uniforms.uTime.value = elapsed;
       this.observerHandles.particlesMat.uniforms.uEntropy.value = this.state.observerEntropy;
       this.observerHandles.particlesMat.uniforms.uWormhole.value = this.state.wormholeCoupling;
@@ -436,14 +459,30 @@ export class QuantumSpacetimeEngine {
       this.fkcrtHandles.meshMat.uniforms.uRoughness.value = this.state.excursionRoughness;
       this.fkcrtHandles.meshMat.uniforms.uResolutionScale.value = this.state.planarEdgesN;
       this.fkcrtHandles.meshMat.uniforms.uShockwave.value = this.shockwavePulse;
-      this.fkcrtHandles.group.rotation.y = elapsed * 0.12 + swirl;
+      if (this.isDirectorTourActive) {
+        this.fkcrtHandles.group.rotation.y = elapsed * 0.68 + swirl;
+        this.fkcrtHandles.group.rotation.x = Math.sin(this.directorTourTime * 0.78) * 0.72;
+        this.fkcrtHandles.group.rotation.z = Math.cos(this.directorTourTime * 0.52) * 0.48;
+      } else {
+        this.fkcrtHandles.group.rotation.y = elapsed * 0.12 + swirl;
+        this.fkcrtHandles.group.rotation.x *= 0.9;
+        this.fkcrtHandles.group.rotation.z *= 0.9;
+      }
 
       this.glbArticulator.updateFKCRTManifold(elapsed, this.state);
     }
 
     if (this.willowHandles.group.visible) {
       const swirl = (1 - this.modePresence.hologram) * 0.9;
-      this.willowHandles.group.rotation.y = swirl;
+      if (this.isDirectorTourActive) {
+        this.willowHandles.group.rotation.y = elapsed * 0.62 + swirl;
+        this.willowHandles.group.rotation.x = 0.42 + Math.sin(this.directorTourTime * 0.82) * 0.55;
+        this.willowHandles.group.rotation.z = Math.cos(this.directorTourTime * 0.62) * 0.46;
+      } else {
+        this.willowHandles.group.rotation.y = swirl;
+        this.willowHandles.group.rotation.x *= 0.9;
+        this.willowHandles.group.rotation.z *= 0.9;
+      }
       this.willowHandles.horizonMat.uniforms.uTime.value = elapsed;
       this.willowHandles.horizonMat.uniforms.uMass.value = this.state.bondiMass;
       this.willowHandles.horizonMat.uniforms.uSpin.value = this.state.kerrSpin;
@@ -470,10 +509,33 @@ export class QuantumSpacetimeEngine {
       this.k3Handles.surfaceMat.uniforms.uDoublePointsM.value = this.state.doublePointCountM;
       this.k3Handles.surfaceMat.uniforms.uSliceAngle.value = this.state.calabiYauSlice;
       this.k3Handles.surfaceMat.uniforms.uShockwave.value = this.shockwavePulse;
-      this.k3Handles.group.rotation.y = elapsed * 0.18 + swirl;
-      this.k3Handles.group.rotation.x = Math.sin(elapsed * 0.3) * 0.2;
+      if (this.isDirectorTourActive) {
+        this.k3Handles.group.rotation.y = elapsed * 0.72 + swirl;
+        this.k3Handles.group.rotation.x = Math.sin(this.directorTourTime * 0.88) * 0.75;
+        this.k3Handles.group.rotation.z = Math.cos(this.directorTourTime * 0.64) * 0.55;
+      } else {
+        this.k3Handles.group.rotation.y = elapsed * 0.18 + swirl;
+        this.k3Handles.group.rotation.x = Math.sin(elapsed * 0.3) * 0.2;
+        this.k3Handles.group.rotation.z *= 0.9;
+      }
 
       this.glbArticulator.updateK3Manifold(elapsed, this.state);
+    }
+
+    if (this.isDirectorTourActive) {
+      this.directorTourTime += dt;
+      const t = this.directorTourTime;
+      const azimuth = t * 0.74;
+      const elevationY = 1.6 + Math.sin(t * 0.92) * 3.8 + Math.cos(t * 0.45) * 1.4;
+      const dist = DEFAULT_CAMERA_DIST * (0.88 + 0.14 * Math.cos(t * 0.82));
+      const horizR = Math.sqrt(Math.max(2.0, dist * dist - elevationY * elevationY));
+
+      this.camera.position.set(
+        Math.sin(azimuth) * horizR,
+        elevationY,
+        Math.cos(azimuth) * horizR
+      );
+      this.controls.target.set(0, 0, 0);
     }
 
     this.controls.update();
