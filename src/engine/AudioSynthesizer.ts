@@ -1,12 +1,8 @@
 /**
- * SUB-SPACETIME STUDIO // PRE-BAKED STEREO SAMPLE & FOLEY ENGINE (v7.0 NATURAL STUDIO AUDIO)
+ * SUB-SPACETIME STUDIO // PRE-BAKED STEREO SAMPLE & FOLEY ENGINE (v7.2 NATURAL STUDIO AUDIO)
  *
- * Why v6.6 sounded weird:
- * - Sliding oscillator frequencies (`frequency.setTargetAtTime`) inside a feedback delay loop
- *   created unnatural pitch-glissando / siren warbles, and the constant 1.8s arpeggiator was intrusive.
- *
- * How v7.0 achieves natural, refined, 0%-CPU studio sound:
- * 1. ZERO sliding oscillators & ZERO feedback delay loops!
+ * Architecture & Performance Guarantees:
+ * 1. ZERO sliding oscillators & ZERO feedback delay loops (no weird siren/glissando warble!).
  * 2. Pre-Baked Stereo AudioBuffers synthesized once in RAM at init (< 6ms total):
  *    - `ambientPadBuffer`: An exact 6.0-second phase-locked stereo warm ambient pad
  *      (exact integer-Hz harmonics: 73 Hz, 146 Hz, 219 Hz, 274 Hz, 292 Hz, 365 Hz, 438 Hz so t=0 and t=6.0s
@@ -14,8 +10,8 @@
  *      Physics sliders gently modulate ONLY the warm lowpass filter cutoff (260 Hz -> 950 Hz).
  *    - `tactileClickBuffer`: A crisp, warm 14ms mechanical hardware detent click (like a
  *      precision Leica aperture ring or studio fader detent) — no weird musical whistling!
- *    - `chordBuffers`: 3 pre-baked stereo harmonic chord swells (with built-in velvet room
- *      decay baked directly into the sample buffer) played only on scene/phase transitions.
+ *    - `chordBuffers`: 3 pre-baked stereo harmonic chord swells with voice-stealing crossfade
+ *      so rapid tab switching never overlaps or clips.
  */
 
 export class AudioSynthesizer {
@@ -24,6 +20,8 @@ export class AudioSynthesizer {
   private padFilter: BiquadFilterNode | null = null;
   private padGain: GainNode | null = null;
   private padSource: AudioBufferSourceNode | null = null;
+  private activeChordSource: AudioBufferSourceNode | null = null;
+  private activeChordGain: GainNode | null = null;
 
   private ambientPadBuffer: AudioBuffer | null = null;
   private tactileClickBuffer: AudioBuffer | null = null;
@@ -68,14 +66,12 @@ export class AudioSynthesizer {
       this.masterGain.gain.value = this.isMuted ? 0.0 : 0.6;
       this.masterGain.connect(this.ctx.destination);
 
-      // 1. Pre-bake all stereo audio buffers once in memory
       this.ambientPadBuffer = this.bakeSeamlessPadBuffer();
       this.tactileClickBuffer = this.bakeTactileClickBuffer();
       this.chordBuffers.ignition = this.bakeChordSwellBuffer([146.83, 220.0, 293.66, 369.99, 440.0], 2.2);
       this.chordBuffers.phase = this.bakeChordSwellBuffer([174.61, 261.63, 329.63, 392.0, 523.25], 2.0);
       this.chordBuffers.shatter = this.bakeChordSwellBuffer([110.0, 164.81, 220.0, 261.63, 329.63], 2.4);
 
-      // 2. Start the single seamless stereo ambient pad loop through a warm lowpass filter
       this.padFilter = this.ctx.createBiquadFilter();
       this.padFilter.type = 'lowpass';
       this.padFilter.frequency.value = 480;
@@ -94,8 +90,6 @@ export class AudioSynthesizer {
       this.padSource.start();
 
       this.isRunning = true;
-
-      // Play a gentle, natural welcome chord swell once
       this.triggerShockwave('ignition');
     } catch {
       // Ignore if audio context is blocked before user gesture
@@ -248,9 +242,41 @@ export class AudioSynthesizer {
     const buf = this.chordBuffers[type];
     if (!buf) return;
 
+    const now = this.ctx.currentTime;
+    if (this.activeChordGain && this.activeChordSource) {
+      const prevGain = this.activeChordGain;
+      const prevSrc = this.activeChordSource;
+      try {
+        prevGain.gain.cancelScheduledValues(now);
+        prevGain.gain.setTargetAtTime(0.0001, now, 0.025);
+        prevSrc.stop(now + 0.12);
+      } catch {
+        // Ignore if already stopped
+      }
+    }
+
+    const chordGain = this.ctx.createGain();
+    chordGain.gain.setValueAtTime(1.0, now);
+
     const src = this.ctx.createBufferSource();
     src.buffer = buf;
-    src.connect(this.masterGain);
-    src.start();
+    src.connect(chordGain);
+    chordGain.connect(this.masterGain);
+    src.start(now);
+
+    this.activeChordSource = src;
+    this.activeChordGain = chordGain;
+  }
+
+  public dispose(): void {
+    try {
+      this.padSource?.stop();
+      this.activeChordSource?.stop();
+      this.ctx?.close().catch(() => {});
+    } catch {
+      // Ignore cleanup errors
+    }
+    this.ctx = null;
+    this.isRunning = false;
   }
 }

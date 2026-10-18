@@ -1,0 +1,456 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createRoot } from 'react-dom/client';
+import './styles/workstation.css';
+import { THEOREM_SCENES } from './data/theoremsCatalog';
+import {
+  CameraPresetId,
+  SceneModeId,
+  SimulationUniformState
+} from './types/workstation';
+import { QuantumSpacetimeEngine } from './engine/QuantumSpacetimeEngine';
+import { AudioSynthesizer } from './engine/AudioSynthesizer';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useDirectorTour } from './hooks/useDirectorTour';
+import { TopMenuBar } from './components/TopMenuBar';
+import { LeftParameterDock } from './components/LeftParameterDock';
+import { Viewport3DStage } from './components/Viewport3DStage';
+import { RightLeanIDE } from './components/RightLeanIDE';
+import { BottomTimelineDock } from './components/BottomTimelineDock';
+import { CommandPaletteModal } from './components/CommandPaletteModal';
+
+const DEFAULT_UNIFORMS: SimulationUniformState = {
+  observerEntropy: 8.4,
+  wormholeCoupling: 1.0,
+  manifoldMorph: 0.65,
+  clusterParameterQ: 2.2,
+  excursionRoughness: 1.15,
+  planarEdgesN: 3.2,
+  bondiMass: 1.2,
+  boundaryQubitFlux: 1.6,
+  kerrSpin: 0.72,
+  stabilizationSign: 1.0,
+  doublePointCountM: 6.0,
+  calabiYauSlice: 1.57
+};
+
+const WorkstationApp: React.FC = () => {
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const engineRef = useRef<QuantumSpacetimeEngine | null>(null);
+  const audioRef = useRef<AudioSynthesizer>(new AudioSynthesizer());
+  const animTokenMapRef = useRef<Record<string, number>>({});
+
+  const [activeMode, setActiveMode] = useState<SceneModeId>('observer');
+  const [uniforms, setUniforms] = useState<SimulationUniformState>(DEFAULT_UNIFORMS);
+  const [openFileIds, setOpenFileIds] = useState<string[]>([
+    'einstein-four-classification',
+    'fkcrt-lean',
+    'cks-bondi-penrose',
+    'f032-withdrawal-notice'
+  ]);
+  const [activeFileId, setActiveFileId] = useState<string>('einstein-four-classification');
+
+  const [isMuted, setIsMuted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [timeScale, setTimeScale] = useState(1.0);
+  const [gridVisible, setGridVisible] = useState(true);
+  const [autoRotate, setAutoRotate] = useState(true);
+  const [sideRacksHidden, setSideRacksHidden] = useState(false);
+  const [dashboardHidden, setDashboardHidden] = useState(false);
+  const [zoomPct, setZoomPct] = useState(100);
+  const [highlightedSliderIdx, setHighlightedSliderIdx] = useState<number | null>(null);
+  const [fps, setFps] = useState(60.0);
+  const [cmdOpen, setCmdOpen] = useState(false);
+
+  useEffect(() => {
+    if (!viewportRef.current) return;
+    const engine = new QuantumSpacetimeEngine(viewportRef.current);
+    engineRef.current = engine;
+
+    let animId = 0;
+    let lastUiSyncTime = 0;
+    let prevFps = 60.0;
+    let prevZoom = 100;
+
+    const loop = (now: number) => {
+      engine.update();
+      if (now - lastUiSyncTime >= 250) {
+        lastUiSyncTime = now;
+        const currentFps = Math.round(engine.fps * 10) / 10;
+        const currentZoom = engine.getZoomPercentage();
+        if (Math.abs(currentFps - prevFps) >= 0.3) {
+          prevFps = currentFps;
+          setFps(currentFps);
+        }
+        if (currentZoom !== prevZoom) {
+          prevZoom = currentZoom;
+          setZoomPct(currentZoom);
+        }
+      }
+      animId = requestAnimationFrame(loop);
+    };
+    animId = requestAnimationFrame(loop);
+
+    const handleResize = () => engine.onResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', handleResize);
+      engine.dispose();
+      audioRef.current.dispose();
+    };
+  }, []);
+
+  const handleZoomIn = useCallback(() => {
+    if (!engineRef.current) return;
+    audioRef.current.playTactileTick(1.2);
+    const nextPct = engineRef.current.zoomByFactor(0.76);
+    setZoomPct(nextPct);
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    if (!engineRef.current) return;
+    audioRef.current.playTactileTick(0.85);
+    const nextPct = engineRef.current.zoomByFactor(1.32);
+    setZoomPct(nextPct);
+  }, []);
+
+  const handleOpenLeanFile = useCallback((fileId: string) => {
+    setOpenFileIds((prev) => (prev.includes(fileId) ? prev : [...prev, fileId]));
+    setActiveFileId(fileId);
+  }, []);
+
+  const handleCloseFileTab = useCallback(
+    (fileId: string) => {
+      setOpenFileIds((prev) => {
+        const filtered = prev.filter((id) => id !== fileId);
+        if (activeFileId === fileId && filtered.length > 0) {
+          setActiveFileId(filtered[filtered.length - 1]);
+        }
+        return filtered;
+      });
+    },
+    [activeFileId]
+  );
+
+  const handleSelectMode = useCallback(
+    (mode: SceneModeId) => {
+      audioRef.current.init();
+      setActiveMode(mode);
+      engineRef.current?.setMode(mode);
+      const defaultFile = THEOREM_SCENES[mode].defaultFileId;
+      handleOpenLeanFile(defaultFile);
+      audioRef.current.triggerShockwave(mode === 'retraction' ? 'shatter' : 'phase');
+    },
+    [handleOpenLeanFile]
+  );
+
+  const handleChangeUniform = useCallback(
+    (key: keyof SimulationUniformState, val: number) => {
+      audioRef.current.init();
+      setUniforms((prev) => {
+        const oldVal = prev[key];
+        const next = { ...prev, [key]: val };
+        if (engineRef.current) {
+          engineRef.current.state[key] = val;
+        }
+        if (key === 'observerEntropy' && oldVal < 0.2 && val >= 0.2) {
+          engineRef.current?.triggerShockwave();
+          audioRef.current.triggerShockwave('ignition');
+        } else if (
+          key === 'clusterParameterQ' &&
+          ((oldVal <= 4.0 && val > 4.0) || (oldVal > 4.0 && val <= 4.0))
+        ) {
+          engineRef.current?.triggerShockwave();
+          audioRef.current.triggerShockwave('phase');
+        } else if (
+          key === 'stabilizationSign' &&
+          ((oldVal >= 0.0 && val < 0.0) || (oldVal < 0.0 && val >= 0.0))
+        ) {
+          engineRef.current?.triggerShockwave();
+          audioRef.current.triggerShockwave('shatter');
+        }
+
+        if (
+          key === 'observerEntropy' ||
+          key === 'wormholeCoupling' ||
+          key === 'manifoldMorph'
+        ) {
+          audioRef.current.modulateFromPhysics(
+            'observer',
+            next.observerEntropy / 12.0,
+            next.observerEntropy > 0.2
+          );
+        } else if (
+          key === 'clusterParameterQ' ||
+          key === 'excursionRoughness' ||
+          key === 'planarEdgesN'
+        ) {
+          audioRef.current.modulateFromPhysics(
+            'fkcrt',
+            (next.clusterParameterQ - 0.5) / 7.5,
+            next.clusterParameterQ > 4.0
+          );
+        } else if (
+          key === 'bondiMass' ||
+          key === 'boundaryQubitFlux' ||
+          key === 'kerrSpin'
+        ) {
+          audioRef.current.modulateFromPhysics(
+            'hologram',
+            next.bondiMass / 2.5,
+            false
+          );
+        } else if (
+          key === 'stabilizationSign' ||
+          key === 'doublePointCountM' ||
+          key === 'calabiYauSlice'
+        ) {
+          audioRef.current.modulateFromPhysics(
+            'retraction',
+            Math.abs(next.stabilizationSign),
+            next.stabilizationSign < 0
+          );
+        }
+
+        return next;
+      });
+    },
+    []
+  );
+
+  const animateUniform = useCallback(
+    (key: keyof SimulationUniformState, target: number, durationMs: number) => {
+      const token = (animTokenMapRef.current[key] || 0) + 1;
+      animTokenMapRef.current[key] = token;
+      const start = engineRef.current ? engineRef.current.state[key] : DEFAULT_UNIFORMS[key];
+      const startTime = performance.now();
+      const step = (now: number) => {
+        if (animTokenMapRef.current[key] !== token) return;
+        const t = Math.min(1, (now - startTime) / durationMs);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const current = start + (target - start) * eased;
+        handleChangeUniform(key, current);
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    },
+    [handleChangeUniform]
+  );
+
+  const handleTriggerQuickAction = useCallback(
+    (mode: SceneModeId) => {
+      audioRef.current.init();
+      const s = engineRef.current?.state || uniforms;
+      if (mode === 'observer') {
+        animateUniform('observerEntropy', s.observerEntropy < 2.0 ? 9.6 : 0.0, 1300);
+      } else if (mode === 'fkcrt') {
+        animateUniform('clusterParameterQ', s.clusterParameterQ <= 4.0 ? 6.8 : 2.0, 1200);
+      } else if (mode === 'hologram') {
+        animateUniform('bondiMass', s.bondiMass < 1.8 ? 2.25 : 0.85, 1100);
+        animateUniform('boundaryQubitFlux', 2.85, 1100);
+      } else if (mode === 'retraction') {
+        animateUniform('stabilizationSign', s.stabilizationSign >= 0 ? -1.0 : 1.0, 900);
+      }
+    },
+    [animateUniform, uniforms]
+  );
+
+  const {
+    isDirectorRunning,
+    tourStatusText,
+    startDirectorTour,
+    stopDirectorTour
+  } = useDirectorTour({
+    onInitAudio: () => audioRef.current.init(),
+    onSelectMode: handleSelectMode,
+    onChangeUniform: handleChangeUniform,
+    onAnimateUniform: animateUniform
+  });
+
+  const handleResetUniforms = useCallback(() => {
+    setUniforms(DEFAULT_UNIFORMS);
+    if (engineRef.current) {
+      engineRef.current.state = { ...DEFAULT_UNIFORMS };
+    }
+  }, []);
+
+  const handleTogglePause = useCallback(() => {
+    setIsPaused((p) => {
+      const next = !p;
+      if (engineRef.current) engineRef.current.isPaused = next;
+      return next;
+    });
+  }, []);
+
+  const handleToggleGrid = useCallback(() => {
+    setGridVisible((g) => {
+      const next = !g;
+      engineRef.current?.setGridVisible(next);
+      return next;
+    });
+  }, []);
+
+  const handleToggleAutoRotate = useCallback(() => {
+    setAutoRotate((o) => {
+      const next = !o;
+      engineRef.current?.setAutoRotate(next);
+      return next;
+    });
+  }, []);
+
+  useKeyboardShortcuts({
+    onToggleCommandPalette: () => setCmdOpen((v) => !v),
+    onSelectMode: handleSelectMode,
+    onToggleDashboardHidden: () => setDashboardHidden((d) => !d),
+    onToggleSideRacksHidden: () => setSideRacksHidden((z) => !z),
+    onZoomIn: handleZoomIn,
+    onZoomOut: handleZoomOut,
+    onResetUniforms: handleResetUniforms,
+    onTogglePause: handleTogglePause,
+    onToggleGrid: handleToggleGrid,
+    onToggleAutoRotate: handleToggleAutoRotate
+  });
+
+  const handleCaptureFrame = useCallback(() => {
+    if (!engineRef.current) return;
+    const url = engineRef.current.captureSnapshotDataUrl();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sub-spacetime-${activeMode}-${Date.now()}.png`;
+    a.click();
+  }, [activeMode]);
+
+  const handleJumpToKeyframe = useCallback(
+    (pct: number) => {
+      if (activeMode === 'observer') {
+        animateUniform('observerEntropy', pct * 12.0, 750);
+      } else if (activeMode === 'fkcrt') {
+        animateUniform('clusterParameterQ', 0.5 + pct * 7.5, 750);
+      } else if (activeMode === 'hologram') {
+        animateUniform('bondiMass', 0.25 + pct * 2.25, 750);
+      } else if (activeMode === 'retraction') {
+        animateUniform('stabilizationSign', 1.0 - pct * 2.0, 750);
+      }
+    },
+    [activeMode, animateUniform]
+  );
+
+  const meta = THEOREM_SCENES[activeMode];
+
+  return (
+    <div
+      className={`spatial-instrument-shell ${
+        sideRacksHidden ? 'zen-theater-active' : ''
+      } ${dashboardHidden ? 'pure-3d-active' : ''}`}
+    >
+      <Viewport3DStage
+        viewportRef={viewportRef}
+        activeMode={activeMode}
+        meta={meta}
+        uniforms={uniforms}
+        onCameraPreset={(p: CameraPresetId) => engineRef.current?.setCameraPreset(p)}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        zoomPct={zoomPct}
+        gridVisible={gridVisible}
+        onToggleGrid={handleToggleGrid}
+        autoRotate={autoRotate}
+        onToggleAutoRotate={handleToggleAutoRotate}
+        onCaptureFrame={handleCaptureFrame}
+        dashboardHidden={dashboardHidden}
+        onToggleDashboardHidden={() => setDashboardHidden((d) => !d)}
+        sideRacksHidden={sideRacksHidden}
+        onToggleSideRacksHidden={() => setSideRacksHidden((s) => !s)}
+        onSelectMode={handleSelectMode}
+      />
+
+      {!dashboardHidden && (
+        <TopMenuBar
+          activeMode={activeMode}
+          onSelectMode={(m) => {
+            stopDirectorTour();
+            handleSelectMode(m);
+          }}
+          isDirectorRunning={isDirectorRunning}
+          onToggleDirector={() =>
+            isDirectorRunning ? stopDirectorTour() : startDirectorTour()
+          }
+          isMuted={isMuted}
+          onToggleMute={() => {
+            audioRef.current.init();
+            const next = !isMuted;
+            setIsMuted(next);
+            audioRef.current.setMuted(next);
+          }}
+          onOpenCommandPalette={() => setCmdOpen(true)}
+          onCameraPreset={(p: CameraPresetId) => engineRef.current?.setCameraPreset(p)}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onResetUniforms={handleResetUniforms}
+          onCaptureFrame={handleCaptureFrame}
+          gridVisible={gridVisible}
+          onToggleGrid={handleToggleGrid}
+          autoRotate={autoRotate}
+          onToggleAutoRotate={handleToggleAutoRotate}
+          onHideDashboard={() => setDashboardHidden(true)}
+        />
+      )}
+
+      {!dashboardHidden && !sideRacksHidden && (
+        <LeftParameterDock
+          activeMode={activeMode}
+          meta={meta}
+          uniforms={uniforms}
+          onChangeUniform={handleChangeUniform}
+          onTriggerQuickAction={handleTriggerQuickAction}
+          activeFileId={activeFileId}
+          onSelectFile={handleOpenLeanFile}
+          onSelectMode={handleSelectMode}
+          onHoverOrScrubSlider={setHighlightedSliderIdx}
+        />
+      )}
+
+      {!dashboardHidden && !sideRacksHidden && (
+        <RightLeanIDE
+          meta={meta}
+          openFileIds={openFileIds}
+          activeFileId={activeFileId}
+          onSelectFile={handleOpenLeanFile}
+          onCloseFileTab={handleCloseFileTab}
+          highlightedSliderIdx={highlightedSliderIdx}
+        />
+      )}
+
+      {!dashboardHidden && (
+        <BottomTimelineDock
+          activeMode={activeMode}
+          meta={meta}
+          isPaused={isPaused}
+          onTogglePause={handleTogglePause}
+          timeScale={timeScale}
+          onChangeTimeScale={(spd) => {
+            setTimeScale(spd);
+            if (engineRef.current) engineRef.current.timeScale = spd;
+          }}
+          getSimTime={() => engineRef.current?.getSimTime() || 0}
+          onScrubSimTime={(t) => engineRef.current?.setSimTime(t)}
+          fps={fps}
+          onJumpToKeyframe={handleJumpToKeyframe}
+          tourStatusText={tourStatusText}
+        />
+      )}
+
+      <CommandPaletteModal
+        isOpen={cmdOpen}
+        onClose={() => setCmdOpen(false)}
+        onSelectMode={handleSelectMode}
+        onOpenLeanFile={handleOpenLeanFile}
+        onTriggerQuickAction={handleTriggerQuickAction}
+      />
+    </div>
+  );
+};
+
+const rootEl = document.getElementById('app')!;
+createRoot(rootEl).render(<WorkstationApp />);
