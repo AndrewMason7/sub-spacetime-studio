@@ -13,7 +13,6 @@ export function createObserverHilbertScene(): ObserverSceneHandles {
   const positions = new Float32Array(count * 3);
   const seeds = new Float32Array(count * 4);
 
-  // Use low-discrepancy Golden Ratio sequence to prevent particle clumping & HDR luminance spikes
   const phiGolden = (1 + Math.sqrt(5)) / 2;
   for (let i = 0; i < count; i++) {
     const u = (i / count);
@@ -166,7 +165,7 @@ export function createObserverHilbertScene(): ObserverSceneHandles {
   });
   group.add(new THREE.Mesh(coreGeo, coreMat));
 
-  const cageGeo = new THREE.IcosahedronGeometry(3.05, 2);
+  const cageGeo = new THREE.IcosahedronGeometry(2.32, 2);
   const wireGeo = new THREE.WireframeGeometry(cageGeo);
   const webLinesMat = new THREE.ShaderMaterial({
     transparent: true,

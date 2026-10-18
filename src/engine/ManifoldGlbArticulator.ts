@@ -30,14 +30,14 @@ export class ManifoldGlbArticulator {
             const isHopfRing = mesh.name.includes('Hopf');
             const ringIdx = parseInt(mesh.name.replace(/\D/g, '') || '0', 10);
             mesh.material = new THREE.MeshPhysicalMaterial({
-              color: isHopfRing ? (ringIdx % 2 === 0 ? 0x38bdf8 : 0xa855f7) : 0x0f2942,
-              emissive: isHopfRing ? (ringIdx % 2 === 0 ? 0x0284c7 : 0x7e22ce) : 0x064e78,
-              emissiveIntensity: isHopfRing ? 0.92 : 0.42,
+              color: isHopfRing ? (ringIdx % 2 === 0 ? 0x38bdf8 : 0xa855f7) : 0x0ea5e9,
+              emissive: isHopfRing ? (ringIdx % 2 === 0 ? 0x0284c7 : 0x7e22ce) : 0x0369a1,
+              emissiveIntensity: isHopfRing ? 1.15 : 0.72,
               metalness: 0.88,
-              roughness: isHopfRing ? 0.14 : 0.24,
+              roughness: isHopfRing ? 0.14 : 0.22,
               transparent: true,
               depthWrite: false,
-              opacity: isHopfRing ? 0.68 : 0.24,
+              opacity: isHopfRing ? 0.86 : 0.46,
               clearcoat: 0.9
             });
           }
@@ -54,7 +54,7 @@ export class ManifoldGlbArticulator {
       (gltf) => {
         if (this.disposed) return;
         const model = gltf.scene;
-        model.scale.setScalar(0.84);
+        model.scale.setScalar(0.82);
         model.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
@@ -84,7 +84,8 @@ export class ManifoldGlbArticulator {
       (gltf) => {
         if (this.disposed) return;
         const model = gltf.scene;
-        model.position.y = -0.35;
+        model.position.y = -0.25;
+        model.scale.setScalar(1.18);
         model.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
@@ -99,7 +100,7 @@ export class ManifoldGlbArticulator {
               wireframe: !isPhotonRing,
               transparent: true,
               depthWrite: false,
-              opacity: isPhotonRing ? 0.88 : isErgosphere ? 0.22 : 0.28
+              opacity: isPhotonRing ? 0.88 : isErgosphere ? 0.28 : 0.34
             });
           }
         });
@@ -115,7 +116,7 @@ export class ManifoldGlbArticulator {
       (gltf) => {
         if (this.disposed) return;
         const model = gltf.scene;
-        model.scale.setScalar(0.72);
+        model.scale.setScalar(0.92);
         model.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
@@ -128,7 +129,7 @@ export class ManifoldGlbArticulator {
               roughness: 0.14,
               transparent: true,
               depthWrite: false,
-              opacity: isCuspLocus ? 0.86 : 0.3,
+              opacity: isCuspLocus ? 0.86 : 0.34,
               clearcoat: 0.85
             });
           }
@@ -145,7 +146,7 @@ export class ManifoldGlbArticulator {
     if (!this.einsteinGlbGroup) return;
     const act = Math.min(1.0, state.observerEntropy / 8.0);
     this.einsteinGlbGroup.visible = act > 0.04;
-    this.einsteinGlbGroup.scale.setScalar(0.01 + act * 0.96);
+    this.einsteinGlbGroup.scale.setScalar(0.01 + act * 0.94);
     this.einsteinGlbGroup.rotation.y = elapsed * 0.18;
     this.einsteinGlbGroup.rotation.z = elapsed * 0.11;
   }
@@ -156,7 +157,8 @@ export class ManifoldGlbArticulator {
     this.fkcrtGlbGroup.rotation.x = -elapsed * 0.16;
     this.fkcrtGlbGroup.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.name.includes('BesselTreeSpine')) {
-        child.scale.setScalar(0.35 + 0.78 * treeFactor * (state.excursionRoughness / 1.15));
+        const clampedRough = Math.min(1.35, state.excursionRoughness / 1.15);
+        child.scale.setScalar(0.35 + 0.65 * treeFactor * clampedRough);
       }
     });
   }
@@ -166,7 +168,7 @@ export class ManifoldGlbArticulator {
     this.cksGlbGroup.rotation.y = elapsed * (0.25 + state.kerrSpin * 0.6);
     this.cksGlbGroup.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.name.includes('PhotonRing')) {
-        child.scale.setScalar(0.65 + state.bondiMass * 0.35);
+        child.scale.setScalar(0.82 + state.bondiMass * 0.32);
       }
     });
   }
@@ -178,7 +180,7 @@ export class ManifoldGlbArticulator {
     this.k3GlbGroup.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         if (child.name.includes('CuspDoublePointLocus')) {
-          child.scale.setScalar(0.85 + shatterFactor * 0.35);
+          child.scale.setScalar(0.88 + shatterFactor * 0.32);
         } else {
           child.visible = state.stabilizationSign > -0.2;
         }

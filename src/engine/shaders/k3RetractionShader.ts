@@ -9,7 +9,7 @@ export interface K3RetractionHandles {
 
 export function createK3RetractionScene(): K3RetractionHandles {
   const group = new THREE.Group();
-  const baseGeo = new THREE.TorusKnotGeometry(1.75, 0.52, 220, 48, 2, 3).toNonIndexed();
+  const baseGeo = new THREE.TorusKnotGeometry(1.48, 0.44, 220, 48, 2, 3).toNonIndexed();
   const posAttr = baseGeo.attributes.position;
   const triCount = posAttr.count / 3;
 

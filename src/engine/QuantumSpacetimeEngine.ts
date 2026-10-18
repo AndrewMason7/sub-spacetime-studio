@@ -19,6 +19,20 @@ import { createWillowHologramScene, WillowHologramHandles } from './shaders/will
 import { createK3RetractionScene, K3RetractionHandles } from './shaders/k3RetractionShader';
 import { ManifoldGlbArticulator } from './ManifoldGlbArticulator';
 
+/**
+ * Calibrated base scale per scene so all 4 manifolds occupy an identical visual bounding sphere
+ * — zero overlap with bottom toolbars and zero sudden size jumps when switching modules!
+ */
+const SCENE_BASE_SCALES: Record<SceneModeId, number> = {
+  observer: 0.84,
+  fkcrt: 0.84,
+  hologram: 0.84,
+  retraction: 0.88
+};
+
+const OPTICAL_CENTER_Y = 0.06;
+const DEFAULT_CAMERA_DIST = 9.6;
+
 export class QuantumSpacetimeEngine {
   private container: HTMLElement;
   private scene: THREE.Scene;
@@ -36,6 +50,14 @@ export class QuantumSpacetimeEngine {
   private k3Handles: K3RetractionHandles;
   private starfieldPoints!: THREE.Points;
   private glbArticulator: ManifoldGlbArticulator;
+
+  private activeMode: SceneModeId = 'observer';
+  private modePresence: Record<SceneModeId, number> = {
+    observer: 1.0,
+    fkcrt: 0.0,
+    hologram: 0.0,
+    retraction: 0.0
+  };
 
   private simTime = 0.0;
   private lastWallTime = performance.now();
@@ -72,8 +94,8 @@ export class QuantumSpacetimeEngine {
     this.scene.background = new THREE.Color(0x030508);
     this.scene.fog = new THREE.FogExp2(0x030508, 0.025);
 
-    this.camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 200);
-    this.camera.position.set(0, 2.2, 8.8);
+    this.camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 200);
+    this.camera.position.set(0, 2.1, 9.57);
 
     this.renderer = new THREE.WebGLRenderer({
       powerPreference: 'high-performance',
@@ -163,6 +185,20 @@ export class QuantumSpacetimeEngine {
     this.willowHandles = createWillowHologramScene();
     this.k3Handles = createK3RetractionScene();
 
+    this.observerHandles.group.position.y = OPTICAL_CENTER_Y;
+    this.fkcrtHandles.group.position.y = OPTICAL_CENTER_Y;
+    this.willowHandles.group.position.y = OPTICAL_CENTER_Y;
+    this.k3Handles.group.position.y = OPTICAL_CENTER_Y;
+
+    this.observerHandles.group.scale.setScalar(SCENE_BASE_SCALES.observer);
+    this.fkcrtHandles.group.scale.setScalar(0.01);
+    this.willowHandles.group.scale.setScalar(0.01);
+    this.k3Handles.group.scale.setScalar(0.01);
+
+    this.fkcrtHandles.group.visible = false;
+    this.willowHandles.group.visible = false;
+    this.k3Handles.group.visible = false;
+
     this.scene.add(this.observerHandles.group);
     this.scene.add(this.fkcrtHandles.group);
     this.scene.add(this.willowHandles.group);
@@ -175,8 +211,6 @@ export class QuantumSpacetimeEngine {
       willowGroup: this.willowHandles.group,
       k3Group: this.k3Handles.group
     });
-
-    this.setMode('observer');
   }
 
   private buildAmbientStarfield(): void {
@@ -211,24 +245,52 @@ export class QuantumSpacetimeEngine {
   }
 
   public setMode(mode: SceneModeId): void {
-    this.observerHandles.group.visible = mode === 'observer';
-    this.fkcrtHandles.group.visible = mode === 'fkcrt';
-    this.willowHandles.group.visible = mode === 'hologram';
-    this.k3Handles.group.visible = mode === 'retraction';
+    const isSame = this.activeMode === mode;
+    this.activeMode = mode;
     this.triggerShockwave();
+
+    if (!isSame) {
+      const token = ++this.cameraAnimToken;
+      const startPos = this.camera.position.clone();
+      const targetCenter = new THREE.Vector3(0, 0, 0);
+      const dir = startPos.clone().sub(targetCenter);
+      if (dir.lengthSq() < 0.01) dir.set(0, 2.2, 8.8);
+      dir.normalize();
+      const angle = 0.28;
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+      const rotatedDir = new THREE.Vector3(
+        dir.x * cosA - dir.z * sinA,
+        THREE.MathUtils.clamp(dir.y, 0.18, 0.38),
+        dir.x * sinA + dir.z * cosA
+      ).normalize();
+      const targetPos = rotatedDir.multiplyScalar(DEFAULT_CAMERA_DIST);
+
+      const startTime = performance.now();
+      const duration = 520;
+      const animateGlide = (now: number) => {
+        if (this.cameraAnimToken !== token) return;
+        const t = Math.min(1, (now - startTime) / duration);
+        const ease = 1 - Math.pow(1 - t, 3);
+        this.camera.position.lerpVectors(startPos, targetPos, ease);
+        this.controls.target.set(0, 0, 0);
+        if (t < 1) requestAnimationFrame(animateGlide);
+      };
+      requestAnimationFrame(animateGlide);
+    }
   }
 
   public setCameraPreset(preset: CameraPresetId): void {
     const token = ++this.cameraAnimToken;
     const startPos = this.camera.position.clone();
-    let targetPos = new THREE.Vector3(0, 2.2, 8.8);
-    if (preset === 'top') targetPos = new THREE.Vector3(0, 10.5, 0.01);
-    else if (preset === 'front') targetPos = new THREE.Vector3(0, 0, 9.2);
-    else if (preset === 'right') targetPos = new THREE.Vector3(9.2, 0, 0);
-    else if (preset === 'closeup') targetPos = new THREE.Vector3(0, 0.85, 4.1);
+    let targetPos = new THREE.Vector3(0, 2.1, DEFAULT_CAMERA_DIST);
+    if (preset === 'top') targetPos = new THREE.Vector3(0, 11.2, 0.01);
+    else if (preset === 'front') targetPos = new THREE.Vector3(0, 0.4, 10.0);
+    else if (preset === 'right') targetPos = new THREE.Vector3(10.0, 0.4, 0);
+    else if (preset === 'closeup') targetPos = new THREE.Vector3(0, 0.85, 6.2);
 
     const startTime = performance.now();
-    const duration = 550;
+    const duration = 580;
     const animateCam = (now: number) => {
       if (this.cameraAnimToken !== token) return;
       const t = Math.min(1, (now - startTime) / duration);
@@ -262,12 +324,12 @@ export class QuantumSpacetimeEngine {
       if (t < 1) requestAnimationFrame(animateZoom);
     };
     requestAnimationFrame(animateZoom);
-    return Math.round((9.07 / newDist) * 100);
+    return Math.round((DEFAULT_CAMERA_DIST / newDist) * 100);
   }
 
   public getZoomPercentage(): number {
     const dist = this.camera.position.distanceTo(this.controls.target);
-    return Math.round((9.07 / Math.max(1.5, dist)) * 100);
+    return Math.round((DEFAULT_CAMERA_DIST / Math.max(1.5, dist)) * 100);
   }
 
   public setGridVisible(visible: boolean): void {
@@ -297,7 +359,7 @@ export class QuantumSpacetimeEngine {
 
   public update(): void {
     const now = performance.now();
-    const dt = (now - this.lastWallTime) / 1000;
+    const dt = Math.min(0.05, (now - this.lastWallTime) / 1000);
     this.lastWallTime = now;
 
     if (!this.isPaused) {
@@ -306,7 +368,7 @@ export class QuantumSpacetimeEngine {
 
     this.shockwavePulse = Math.max(0.0, this.shockwavePulse * 0.91 - 0.002);
 
-    const caOffset = 0.0012 + this.shockwavePulse * 0.0015;
+    const caOffset = 0.0012 + this.shockwavePulse * 0.0016;
     this.chromaticEffect.offset.set(caOffset, caOffset);
 
     this.frameCount++;
@@ -321,7 +383,36 @@ export class QuantumSpacetimeEngine {
       this.starfieldPoints.rotation.y = elapsed * 0.014;
     }
 
+    const groupMap: Record<SceneModeId, THREE.Group> = {
+      observer: this.observerHandles.group,
+      fkcrt: this.fkcrtHandles.group,
+      hologram: this.willowHandles.group,
+      retraction: this.k3Handles.group
+    };
+
+    const modes: SceneModeId[] = ['observer', 'fkcrt', 'hologram', 'retraction'];
+    const morphSpeed = Math.min(1.0, dt * 8.5);
+
+    for (const m of modes) {
+      const target = m === this.activeMode ? 1.0 : 0.0;
+      const current = this.modePresence[m];
+      const next = current + (target - current) * morphSpeed;
+      this.modePresence[m] = Math.abs(target - next) < 0.004 ? target : next;
+
+      const grp = groupMap[m];
+      const p = this.modePresence[m];
+      if (p > 0.006) {
+        grp.visible = true;
+        const eased = 1 - Math.pow(1 - p, 3);
+        grp.scale.setScalar(SCENE_BASE_SCALES[m] * (0.06 + 0.94 * eased));
+      } else {
+        grp.visible = false;
+      }
+    }
+
     if (this.observerHandles.group.visible) {
+      const swirl = (1 - this.modePresence.observer) * 0.9;
+      this.observerHandles.group.rotation.y = swirl;
       this.observerHandles.particlesMat.uniforms.uTime.value = elapsed;
       this.observerHandles.particlesMat.uniforms.uEntropy.value = this.state.observerEntropy;
       this.observerHandles.particlesMat.uniforms.uWormhole.value = this.state.wormholeCoupling;
@@ -339,17 +430,20 @@ export class QuantumSpacetimeEngine {
     }
 
     if (this.fkcrtHandles.group.visible) {
+      const swirl = (1 - this.modePresence.fkcrt) * 0.9;
       this.fkcrtHandles.meshMat.uniforms.uTime.value = elapsed;
       this.fkcrtHandles.meshMat.uniforms.uQ.value = this.state.clusterParameterQ;
       this.fkcrtHandles.meshMat.uniforms.uRoughness.value = this.state.excursionRoughness;
       this.fkcrtHandles.meshMat.uniforms.uResolutionScale.value = this.state.planarEdgesN;
       this.fkcrtHandles.meshMat.uniforms.uShockwave.value = this.shockwavePulse;
-      this.fkcrtHandles.group.rotation.y = elapsed * 0.12;
+      this.fkcrtHandles.group.rotation.y = elapsed * 0.12 + swirl;
 
       this.glbArticulator.updateFKCRTManifold(elapsed, this.state);
     }
 
     if (this.willowHandles.group.visible) {
+      const swirl = (1 - this.modePresence.hologram) * 0.9;
+      this.willowHandles.group.rotation.y = swirl;
       this.willowHandles.horizonMat.uniforms.uTime.value = elapsed;
       this.willowHandles.horizonMat.uniforms.uMass.value = this.state.bondiMass;
       this.willowHandles.horizonMat.uniforms.uSpin.value = this.state.kerrSpin;
@@ -370,12 +464,13 @@ export class QuantumSpacetimeEngine {
     }
 
     if (this.k3Handles.group.visible) {
+      const swirl = (1 - this.modePresence.retraction) * 0.9;
       this.k3Handles.surfaceMat.uniforms.uTime.value = elapsed;
       this.k3Handles.surfaceMat.uniforms.uSign.value = this.state.stabilizationSign;
       this.k3Handles.surfaceMat.uniforms.uDoublePointsM.value = this.state.doublePointCountM;
       this.k3Handles.surfaceMat.uniforms.uSliceAngle.value = this.state.calabiYauSlice;
       this.k3Handles.surfaceMat.uniforms.uShockwave.value = this.shockwavePulse;
-      this.k3Handles.group.rotation.y = elapsed * 0.18;
+      this.k3Handles.group.rotation.y = elapsed * 0.18 + swirl;
       this.k3Handles.group.rotation.x = Math.sin(elapsed * 0.3) * 0.2;
 
       this.glbArticulator.updateK3Manifold(elapsed, this.state);
