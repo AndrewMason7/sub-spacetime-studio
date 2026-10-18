@@ -145,6 +145,18 @@
   background: #334155;
   border: 1px solid var(--text-secondary);
   cursor: pointer;
+  z-index: 4;
+}
+
+.ws-kf-diamond::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+}
+
+.ws-kf-diamond:hover {
+  transform: translateX(-3px) rotate(45deg) scale(1.25);
+  border-color: #ffffff;
 }
 
 .ws-kf-diamond.critical {

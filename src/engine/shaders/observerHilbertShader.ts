@@ -13,6 +13,7 @@ export function createObserverHilbertScene(): ObserverSceneHandles {
   const positions = new Float32Array(count * 3);
   const seeds = new Float32Array(count * 4);
 
+  // Use low-discrepancy Golden Ratio sequence to prevent particle clumping & HDR luminance spikes
   const phiGolden = (1 + Math.sqrt(5)) / 2;
   for (let i = 0; i < count; i++) {
     const u = (i / count);
@@ -65,6 +66,7 @@ export function createObserverHilbertScene(): ObserverSceneHandles {
           cos(eta) * cos(xi2),
           cos(eta) * sin(xi2)
         );
+        // Smooth stereographic denominator bounded safely away from zero to prevent infinity spikes
         float denom = max(0.55, 1.45 - pS4.w * 0.62);
         vec3 posS4 = pS4.xyz / denom * 2.15;
 
@@ -115,6 +117,7 @@ export function createObserverHilbertScene(): ObserverSceneHandles {
         vec3 activeColor = mix(mix(coldCol, midCol, colorMix), hotCol, pow(aSeed.w, 3.2));
         vColor = mix(vec3(0.45, 0.82, 0.98), activeColor, ignition);
 
+        // Steady temporal luminance (zero global strobing)
         vAlpha = mix(0.14, 0.52, ignition) * (0.82 + 0.18 * sin(uTime * 0.8 + aSeed.w * 62.83));
         gl_PointSize = clamp((mix(3.5, 9.5, aSeed.w) * (0.45 + 0.55 * ignition)) / max(1.5, -mvPosition.z), 1.0, 8.0);
       }

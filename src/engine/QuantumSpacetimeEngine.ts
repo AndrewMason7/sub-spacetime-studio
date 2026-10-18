@@ -19,6 +19,11 @@ import { createWillowHologramScene, WillowHologramHandles } from './shaders/will
 import { createK3RetractionScene, K3RetractionHandles } from './shaders/k3RetractionShader';
 import { ManifoldGlbArticulator } from './ManifoldGlbArticulator';
 
+/**
+ * Calibrated base scale per scene so all 4 manifolds occupy an identical visual bounding sphere
+ * (radius ~ 2.15 units, centered at Y = +0.42 in the clear optical window between top & bottom HUDs)
+ * — zero overlap with bottom toolbars and zero sudden size jumps when switching modules!
+ */
 const SCENE_BASE_SCALES: Record<SceneModeId, number> = {
   observer: 0.84,
   fkcrt: 0.84,
@@ -93,7 +98,9 @@ export class QuantumSpacetimeEngine {
     this.scene.fog = new THREE.FogExp2(0x030508, 0.025);
 
     this.camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 200);
-    this.camera.position.set(0, 2.1, 9.57);
+    // Smoothly align initial camera distance to exact DEFAULT_CAMERA_DIST (9.6 -> 100% zoom)
+    const initZ = Math.sqrt(Math.max(1, DEFAULT_CAMERA_DIST * DEFAULT_CAMERA_DIST - 2.1 * 2.1));
+    this.camera.position.set(0, 2.1, initZ);
 
     this.renderer = new THREE.WebGLRenderer({
       powerPreference: 'high-performance',
@@ -242,18 +249,23 @@ export class QuantumSpacetimeEngine {
     this.scene.add(this.starfieldPoints);
   }
 
+  /**
+   * Triggers a smooth 3D overlapping spatial morph & camera glide transition between manifolds
+   */
   public setMode(mode: SceneModeId): void {
     const isSame = this.activeMode === mode;
     this.activeMode = mode;
     this.triggerShockwave();
 
-    if (!isSame && !this.isDirectorTourActive) {
+    if (!isSame) {
+      // Smoothly re-normalize camera distance along current viewing ray so zoom scale stays consistent
       const token = ++this.cameraAnimToken;
       const startPos = this.camera.position.clone();
       const targetCenter = new THREE.Vector3(0, 0, 0);
       const dir = startPos.clone().sub(targetCenter);
       if (dir.lengthSq() < 0.01) dir.set(0, 2.2, 8.8);
       dir.normalize();
+      // Gently orbit 18 degrees horizontally during scene transition for a cinematic 3D feel
       const angle = 0.28;
       const cosA = Math.cos(angle);
       const sinA = Math.sin(angle);
@@ -281,7 +293,8 @@ export class QuantumSpacetimeEngine {
   public setCameraPreset(preset: CameraPresetId): void {
     const token = ++this.cameraAnimToken;
     const startPos = this.camera.position.clone();
-    let targetPos = new THREE.Vector3(0, 2.1, DEFAULT_CAMERA_DIST);
+    const perspZ = Math.sqrt(Math.max(1, DEFAULT_CAMERA_DIST * DEFAULT_CAMERA_DIST - 2.1 * 2.1));
+    let targetPos = new THREE.Vector3(0, 2.1, perspZ);
     if (preset === 'top') targetPos = new THREE.Vector3(0, 11.2, 0.01);
     else if (preset === 'front') targetPos = new THREE.Vector3(0, 0.4, 10.0);
     else if (preset === 'right') targetPos = new THREE.Vector3(10.0, 0.4, 0);
@@ -341,6 +354,7 @@ export class QuantumSpacetimeEngine {
   public setDirectorTourMode(active: boolean): void {
     this.isDirectorTourActive = active;
     if (!active) {
+      // Smoothly reset manifold tilts back to upright when exiting Director Tour
       const groups = [
         this.observerHandles.group,
         this.fkcrtHandles.group,
@@ -398,6 +412,7 @@ export class QuantumSpacetimeEngine {
       this.starfieldPoints.rotation.y = elapsed * 0.014;
     }
 
+    // Smooth 3D Cross-Scale & Orbital Morph Transition across the 4 Manifolds
     const groupMap: Record<SceneModeId, THREE.Group> = {
       observer: this.observerHandles.group,
       fkcrt: this.fkcrtHandles.group,
@@ -418,6 +433,7 @@ export class QuantumSpacetimeEngine {
       const p = this.modePresence[m];
       if (p > 0.006) {
         grp.visible = true;
+        // Cubic ease-out scale interpolation so incoming manifold blooms smoothly from center
         const eased = 1 - Math.pow(1 - p, 3);
         grp.scale.setScalar(SCENE_BASE_SCALES[m] * (0.06 + 0.94 * eased));
       } else {
@@ -476,6 +492,7 @@ export class QuantumSpacetimeEngine {
       const swirl = (1 - this.modePresence.hologram) * 0.9;
       if (this.isDirectorTourActive) {
         this.willowHandles.group.rotation.y = elapsed * 0.62 + swirl;
+        // Tilt the CKS funnel & Kerr ergosphere up to 45 degrees so the side profile & depth well are clearly visible!
         this.willowHandles.group.rotation.x = 0.42 + Math.sin(this.directorTourTime * 0.82) * 0.55;
         this.willowHandles.group.rotation.z = Math.cos(this.directorTourTime * 0.62) * 0.46;
       } else {
@@ -522,6 +539,7 @@ export class QuantumSpacetimeEngine {
       this.glbArticulator.updateK3Manifold(elapsed, this.state);
     }
 
+    // Continuous 360° Orbital Crane & Elevation Camera Sweep during Director's Cut Tour
     if (this.isDirectorTourActive) {
       this.directorTourTime += dt;
       const t = this.directorTourTime;

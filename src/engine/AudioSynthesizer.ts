@@ -175,11 +175,34 @@ export class AudioSynthesizer {
     }
   }
 
-  public playTactileTick(_pitchMultiplier = 1.0): void {
+  public playTactileTick(pitchMultiplier = 1.0): void {
     if (this.isMuted) return;
     if (!this.isRunning) {
       this.init();
     }
+    try {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!(window as unknown as { __SPACETIME_WEB_AUDIO_CTX__?: AudioContext }).__SPACETIME_WEB_AUDIO_CTX__) {
+        (window as unknown as { __SPACETIME_WEB_AUDIO_CTX__?: AudioContext }).__SPACETIME_WEB_AUDIO_CTX__ = new AudioCtx();
+      }
+      const ctx = (window as unknown as { __SPACETIME_WEB_AUDIO_CTX__?: AudioContext }).__SPACETIME_WEB_AUDIO_CTX__!;
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      const now = ctx.currentTime;
+      osc.frequency.setValueAtTime(520 * pitchMultiplier, now);
+      osc.frequency.exponentialRampToValueAtTime(180 * pitchMultiplier, now + 0.038);
+      gain.gain.setValueAtTime(0.065, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.038);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.04);
+    } catch {}
   }
 
   public modulateFromPhysics(_mode: string, intensity: number, _criticalCrossed: boolean): void {

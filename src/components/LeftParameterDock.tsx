@@ -31,8 +31,9 @@ interface LeftParameterDockProps {
   onTriggerQuickAction: (mode: SceneModeId) => void;
   activeFileId: string;
   onSelectFile: (fileId: string) => void;
-  onSelectMode: (mode: SceneModeId) => void;
+  onSelectMode: (mode: SceneModeId, targetFileId?: string) => void;
   onHoverOrScrubSlider?: (sliderIdx: number | null) => void;
+  highlightedSliderIdx?: number | null;
 }
 
 export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
@@ -44,7 +45,8 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
   activeFileId,
   onSelectFile,
   onSelectMode,
-  onHoverOrScrubSlider
+  onHoverOrScrubSlider,
+  highlightedSliderIdx
 }) => {
   const [activeTab, setActiveTab] = useState<'faders' | 'intuition'>('faders');
   const [treeExpanded, setTreeExpanded] = useState(true);
@@ -52,13 +54,17 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
   const scopeCanvasRef = useRef<HTMLCanvasElement>(null);
   const sweepXRef = useRef<number>(0);
   const prevYRef = useRef<number>(30);
+  const uniformsRef = useRef<SimulationUniformState>(uniforms);
+  uniformsRef.current = uniforms;
 
+  // Distinct per-channel color accents so the 3 DAW faders are immediately distinguishable by eye!
   const getChannelAccent = (sliderIdx: number): string => {
     if (sliderIdx === 0) return meta.statusColor;
-    if (sliderIdx === 1) return '#fbbf24';
-    return activeMode === 'fkcrt' || activeMode === 'retraction' ? '#38bdf8' : '#c084fc';
+    if (sliderIdx === 1) return '#fbbf24'; // Warm Tactile Amber-Gold for Channel 2
+    return activeMode === 'fkcrt' || activeMode === 'retraction' ? '#38bdf8' : '#c084fc'; // Cyan/Violet for Channel 3
   };
 
+  // Authentic CRT Phosphor Persistence & Decay Oscilloscope with Pre-Populated Waveform
   useEffect(() => {
     let animId = 0;
     const canvas = scopeCanvasRef.current;
@@ -70,9 +76,10 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
         ctx.fillStyle = '#02130b';
         ctx.fillRect(0, 0, w, h);
 
+        // Pre-populate a full waveform trace across the 320px CRT screen on mount/mode-switch
         const { traceColor } = computeOscilloscopeSample(
           activeMode,
-          uniforms,
+          uniformsRef.current,
           0,
           '#10b981'
         );
@@ -85,7 +92,7 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
         for (let x = 0; x < w; x += 2) {
           const { sample } = computeOscilloscopeSample(
             activeMode,
-            uniforms,
+            uniformsRef.current,
             x * 0.045,
             '#10b981'
           );
@@ -109,9 +116,11 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
           const h = c.height;
           const t = performance.now() * 0.005;
 
+          // 1. Authentic Phosphor Persistence Decay (deep Tektronix emerald afterglow)
           ctx.fillStyle = 'rgba(2, 19, 11, 0.075)';
           ctx.fillRect(0, 0, w, h);
 
+          // 2. Tactical Graticule Grid
           ctx.strokeStyle = 'rgba(16, 185, 129, 0.08)';
           ctx.lineWidth = 0.75;
           ctx.beginPath();
@@ -125,15 +134,17 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
           }
           ctx.stroke();
 
+          // Center 0V Reference Line
           ctx.strokeStyle = 'rgba(52, 211, 153, 0.18)';
           ctx.beginPath();
           ctx.moveTo(0, h / 2);
           ctx.lineTo(w, h / 2);
           ctx.stroke();
 
-          const { sample } = computeOscilloscopeSample(
+          // 3. Compute Live Physical Harmonic Sample & Alert Color
+          const { sample, traceColor } = computeOscilloscopeSample(
             activeMode,
-            uniforms,
+            uniformsRef.current,
             t,
             '#34d399'
           );
@@ -141,9 +152,10 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
           const nextX = (sweepXRef.current + 2.4) % w;
           const nextY = Math.max(5, Math.min(h - 5, (1 - sample) * (h - 10) + 5));
 
+          // 4. Draw Glowing Cathode Ray Segment
           ctx.save();
-          ctx.strokeStyle = '#34d399';
-          ctx.shadowColor = '#10b981';
+          ctx.strokeStyle = traceColor;
+          ctx.shadowColor = traceColor;
           ctx.shadowBlur = 9;
           ctx.lineWidth = 1.85;
           ctx.beginPath();
@@ -168,7 +180,7 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
 
     animId = requestAnimationFrame(renderPhosphorScope);
     return () => cancelAnimationFrame(animId);
-  }, [activeMode, uniforms, meta.statusColor]);
+  }, [activeMode]);
 
   const { label: quickActionLabel, isDanger } = getQuickActionSpec(
     activeMode,
@@ -177,6 +189,7 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
 
   return (
     <aside className="floating-instrument-panel left-instrument-rack">
+      {/* SECTION 1: DUAL-MODE RACK SWITCHER (CYAN/SCENE-COLORED HARDWARE ZONE) */}
       <div
         className="ws-pane-header zone-header-faders"
         style={{
@@ -236,16 +249,16 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
               s.criticalValue !== undefined
                 ? ((s.criticalValue - s.min) / (s.max - s.min)) * 100
                 : null;
-            const isHovered = hoveredSlider === s.id;
+            const isHighlighted = hoveredSlider === s.id || highlightedSliderIdx === sIdx;
             const chColor = getChannelAccent(sIdx);
 
             return (
               <div
-                className={`daw-fader-module ${isHovered ? 'hovered' : ''}`}
+                className={`daw-fader-module ${isHighlighted ? 'hovered' : ''}`}
                 key={s.id}
                 style={{
                   borderLeft: `3px solid ${chColor}`,
-                  boxShadow: isHovered
+                  boxShadow: isHighlighted
                     ? `inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 1px ${chColor}55`
                     : undefined
                 }}
@@ -255,13 +268,22 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                 }}
                 onMouseLeave={() => {
                   setHoveredSlider(null);
+                  onHoverOrScrubSlider?.(null);
                 }}
+                onDoubleClick={() => onChangeUniform(s.id, s.defaultValue)}
               >
                 <div className="daw-fader-header">
                   <span className="daw-fader-label" style={{ color: '#f8fafc' }}>
                     {s.label}
                   </span>
-                  <div className="daw-readout-group">
+                  <div
+                    className="daw-readout-group"
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      onChangeUniform(s.id, s.defaultValue);
+                    }}
+                    title="Double-click to reset channel to default"
+                  >
                     <span
                       className="daw-symbol-pill"
                       style={{
@@ -289,6 +311,7 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                   </div>
                 </div>
 
+                {/* Precision DAW Tactile Scrub Track with Channel-Specific Color */}
                 <div className="daw-track-chassis">
                   <div className="daw-micro-ticks-top" />
                   <div className="daw-micro-ticks-bottom" />
@@ -313,8 +336,8 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                     className="daw-fader-cap"
                     style={{
                       left: `${pct}%`,
-                      borderColor: isHovered ? '#ffffff' : chColor,
-                      boxShadow: isHovered
+                      borderColor: isHighlighted ? '#ffffff' : chColor,
+                      boxShadow: isHighlighted
                         ? `0 0 12px ${chColor}`
                         : '0 2px 6px rgba(0,0,0,0.85)'
                     }}
@@ -322,7 +345,7 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                     <span className="daw-cap-centerline" style={{ background: chColor }} />
                   </div>
 
-                  {isHovered && (
+                  {isHighlighted && (
                     <div
                       className="daw-floating-tracker"
                       style={{ left: `${pct}%`, color: chColor }}
@@ -404,6 +427,7 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
         </div>
       )}
 
+      {/* SECTION 2: AUTHENTIC TEKTRONIX EMERALD CRT PHOSPHOR OSCILLOSCOPE ZONE */}
       <div className="ws-pane-header zone-header-scope">
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <Activity size={14} strokeWidth={1.5} color="#34d399" />
@@ -438,6 +462,7 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
         </div>
       </div>
 
+      {/* SECTION 3: INDIGO/VIOLET LEAN 4 REPOSITORY VAULT ZONE */}
       <div
         className="ws-pane-header clickable zone-header-repo"
         onClick={() => setTreeExpanded(!treeExpanded)}
@@ -478,9 +503,10 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                   background: isSelected ? `${file.badgeColor}18` : undefined
                 }}
                 onClick={() => {
-                  onSelectFile(file.id);
                   if (file.moduleGroup !== activeMode) {
-                    onSelectMode(file.moduleGroup);
+                    onSelectMode(file.moduleGroup, file.id);
+                  } else {
+                    onSelectFile(file.id);
                   }
                 }}
               >

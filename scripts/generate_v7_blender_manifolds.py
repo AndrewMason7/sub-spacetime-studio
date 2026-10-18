@@ -188,6 +188,7 @@ def generate_m01_observer():
         0.82 + 0.18 * math.sin(z * 3.5)
     ))
 
+    # Shape Key 1: `Singularity_Collapse` — morphs Clifford torus into 0D singleton quantum state as S_Ob -> 0
     add_morph_shape_key(
         obj_core,
         "Singularity_Collapse",
@@ -198,6 +199,7 @@ def generate_m01_observer():
         )
     )
 
+    # 5 True Conformal Hopf Fibration Villarceau Circles
     phi_golden = (1.0 + math.sqrt(5.0)) / 2.0
     for k in range(5):
         y_base = 1.0 - (2.0 * k + 1.0) / 5.0
@@ -280,6 +282,7 @@ def generate_m02_fkcrt():
         min(1.0, 0.72 + 0.28 * math.sin(z * 3.0))
     ))
 
+    # Shape Key 2: `Fractal_Roughness` — morphs LQG sphere into extreme d_H = 2.0 Hausdorff fractal spikes as q -> 4
     def fractal_spike_displace(idx, x, y, z):
         r = max(1e-5, math.sqrt(x * x + y * y + z * z))
         nx, ny, nz = x / r, y / r, z / r
@@ -292,6 +295,7 @@ def generate_m02_fkcrt():
 
     add_morph_shape_key(obj_fk, "Fractal_Roughness", fractal_spike_displace)
 
+    # 6 Branching Aldous Continuum Random Tree Spines with Brownian Tapering
     phi_g = (1.0 + math.sqrt(5.0)) / 2.0
     for b_idx in range(6):
         z_dir = 1.0 - (2.0 * b_idx + 1.0) / 6.0
@@ -364,6 +368,7 @@ def generate_m03_cks():
         min(1.0, 0.85)
     ))
 
+    # 3B. Kerr Ergosphere Oblate Spheroid r_ergo(theta) = M(1 + sqrt(1 - a^2 cos^2 theta))
     mesh_ergo = bpy.data.meshes.new("KerrErgosphereMesh")
     obj_ergo = bpy.data.objects.new("KerrErgosphere", mesh_ergo)
     bpy.context.collection.objects.link(obj_ergo)
@@ -386,6 +391,7 @@ def generate_m03_cks():
         0.96
     ))
 
+    # Shape Key 3: `Ergo_Bulge` — flattens Schwarzschild sphere into extreme oblate Kerr ergosphere as a -> 1.0
     def ergo_bulge_displace(idx, x, y, z):
         r_horiz = math.sqrt(x * x + z * z)
         bulge = 1.32
@@ -398,13 +404,17 @@ def generate_m03_cks():
 
     add_morph_shape_key(obj_ergo, "Ergo_Bulge", ergo_bulge_displace)
 
+    # 3C. 3D Precessing Spherical Photon Geodesic Orbit (Lense-Thirring 3D Null Geodesic Crown)
     photon_pts = []
-    N_photons = 160
+    N_photons = 220
     for j in range(N_photons):
         th = (j / N_photons) * 2.0 * math.pi
-        r_ph = 1.68
-        photon_pts.append((r_ph * math.cos(th), 0.035 * math.sin(3 * th), r_ph * math.sin(th)))
-    photon_obj = add_curve_tube("PhotonRing3M", photon_pts, bevel_depth=0.024, closed=True, mat=mat_photon)
+        r_ph = 1.52 + 0.18 * math.cos(3.0 * th)
+        px = r_ph * math.cos(2.0 * th)
+        py = 0.58 * math.sin(3.0 * th)
+        pz = r_ph * math.sin(2.0 * th)
+        photon_pts.append((px, py, pz))
+    photon_obj = add_curve_tube("PhotonRing3M", photon_pts, bevel_depth=0.022, closed=True, mat=mat_photon)
     bake_vertex_colors(photon_obj, lambda x, y, z: (1.0, 0.76, 0.24))
 
     export_path = str(OUTPUT_DIR / "cks_horizon_funnel.glb")
@@ -459,6 +469,7 @@ def generate_m04_k3():
         0.78 + 0.22 * math.cos(y * 3.0)
     ))
 
+    # Shape Key 4: `Cusp_Shatter` — pinches Lefschetz vanishing cycle into A_1 double points when eps_stab -> -1
     def cusp_shatter_displace(idx, x, y, z):
         ang = math.atan2(y, x)
         pinch = abs(math.sin(5.0 * ang))
@@ -468,6 +479,7 @@ def generate_m04_k3():
 
     add_morph_shape_key(obj_k3, "Cusp_Shatter", cusp_shatter_displace)
 
+    # 2 Lagrangian Cusp Vanishing Cycle Loci for Double-Point Invariant I_new = -2m
     for c_idx in range(2):
         sign_dir = 1.0 if c_idx == 0 else -1.0
         cusp_pts = []

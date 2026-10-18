@@ -50,6 +50,7 @@ const WorkstationApp: React.FC = () => {
     'f032-withdrawal-notice'
   ]);
   const [activeFileId, setActiveFileId] = useState<string>('einstein-four-classification');
+  const [activeCameraPreset, setActiveCameraPreset] = useState<CameraPresetId | null>('perspective');
 
   const [isMuted, setIsMuted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -103,6 +104,12 @@ const WorkstationApp: React.FC = () => {
     };
   }, []);
 
+  const cancelAllUniformAnimations = useCallback(() => {
+    for (const key of Object.keys(DEFAULT_UNIFORMS)) {
+      animTokenMapRef.current[key] = (animTokenMapRef.current[key] || 0) + 1;
+    }
+  }, []);
+
   const handleToggleMute = useCallback(() => {
     setIsMuted((prev) => {
       const next = !prev;
@@ -112,6 +119,7 @@ const WorkstationApp: React.FC = () => {
   }, []);
 
   const handleCameraPreset = useCallback((preset: CameraPresetId) => {
+    setActiveCameraPreset(preset);
     engineRef.current?.setCameraPreset(preset);
   }, []);
 
@@ -148,12 +156,12 @@ const WorkstationApp: React.FC = () => {
   );
 
   const handleSelectMode = useCallback(
-    (mode: SceneModeId) => {
+    (mode: SceneModeId, targetFileId?: string) => {
       audioRef.current.init();
       setActiveMode(mode);
       engineRef.current?.setMode(mode);
-      const defaultFile = THEOREM_SCENES[mode].defaultFileId;
-      handleOpenLeanFile(defaultFile);
+      const fileToOpen = targetFileId || THEOREM_SCENES[mode].defaultFileId;
+      handleOpenLeanFile(fileToOpen);
       audioRef.current.triggerShockwave(mode === 'retraction' ? 'shatter' : 'phase');
     },
     [handleOpenLeanFile]
@@ -255,14 +263,16 @@ const WorkstationApp: React.FC = () => {
   const handleTriggerQuickAction = useCallback(
     (mode: SceneModeId) => {
       audioRef.current.init();
+      setHighlightedSliderIdx(0);
       const s = engineRef.current?.state || uniforms;
       if (mode === 'observer') {
         animateUniform('observerEntropy', s.observerEntropy < 2.0 ? 9.6 : 0.0, 1300);
       } else if (mode === 'fkcrt') {
         animateUniform('clusterParameterQ', s.clusterParameterQ <= 4.0 ? 6.8 : 2.0, 1200);
       } else if (mode === 'hologram') {
-        animateUniform('bondiMass', s.bondiMass < 1.8 ? 2.25 : 0.85, 1100);
-        animateUniform('boundaryQubitFlux', 2.85, 1100);
+        const expand = s.bondiMass < 1.8;
+        animateUniform('bondiMass', expand ? 2.25 : 0.85, 1100);
+        animateUniform('boundaryQubitFlux', expand ? 2.85 : 1.35, 1100);
       } else if (mode === 'retraction') {
         animateUniform('stabilizationSign', s.stabilizationSign >= 0 ? -1.0 : 1.0, 900);
       }
@@ -284,16 +294,28 @@ const WorkstationApp: React.FC = () => {
     onSelectMode: handleSelectMode,
     onChangeUniform: handleChangeUniform,
     onAnimateUniform: animateUniform,
+    onCancelUniformAnimations: cancelAllUniformAnimations,
     onCameraPreset: handleCameraPreset,
-    onHighlightSlider: setHighlightedSliderIdx
+    onHighlightSlider: setHighlightedSliderIdx,
+    onDirectorActiveChange: (active) => engineRef.current?.setDirectorTourMode(active)
   });
 
+  const handleUserSelectMode = useCallback(
+    (mode: SceneModeId, targetFileId?: string) => {
+      stopDirectorTour();
+      handleSelectMode(mode, targetFileId);
+    },
+    [stopDirectorTour, handleSelectMode]
+  );
+
   const handleResetUniforms = useCallback(() => {
+    stopDirectorTour();
+    cancelAllUniformAnimations();
     setUniforms(DEFAULT_UNIFORMS);
     if (engineRef.current) {
       engineRef.current.state = { ...DEFAULT_UNIFORMS };
     }
-  }, []);
+  }, [stopDirectorTour, cancelAllUniformAnimations]);
 
   const handleTogglePause = useCallback(() => {
     setIsPaused((p) => {
@@ -319,20 +341,6 @@ const WorkstationApp: React.FC = () => {
     });
   }, []);
 
-  useKeyboardShortcuts({
-    onToggleCommandPalette: () => setCmdOpen((v) => !v),
-    onSelectMode: handleSelectMode,
-    onToggleDashboardHidden: () => setDashboardHidden((d) => !d),
-    onToggleSideRacksHidden: () => setSideRacksHidden((z) => !z),
-    onZoomIn: handleZoomIn,
-    onZoomOut: handleZoomOut,
-    onResetUniforms: handleResetUniforms,
-    onTogglePause: handleTogglePause,
-    onToggleGrid: handleToggleGrid,
-    onToggleAutoRotate: handleToggleAutoRotate,
-    onToggleMute: handleToggleMute
-  });
-
   const handleCaptureFrame = useCallback(() => {
     if (!engineRef.current) return;
     const url = engineRef.current.captureSnapshotDataUrl();
@@ -342,8 +350,26 @@ const WorkstationApp: React.FC = () => {
     a.click();
   }, [activeMode]);
 
+  useKeyboardShortcuts({
+    onToggleCommandPalette: () => setCmdOpen((v) => !v),
+    onSelectMode: handleUserSelectMode,
+    onToggleDashboardHidden: () => setDashboardHidden((d) => !d),
+    onToggleSideRacksHidden: () => setSideRacksHidden((z) => !z),
+    onZoomIn: handleZoomIn,
+    onZoomOut: handleZoomOut,
+    onResetUniforms: handleResetUniforms,
+    onTogglePause: handleTogglePause,
+    onToggleGrid: handleToggleGrid,
+    onToggleAutoRotate: handleToggleAutoRotate,
+    onToggleMute: handleToggleMute,
+    onCaptureFrame: handleCaptureFrame,
+    onCameraPreset: handleCameraPreset
+  });
+
   const handleJumpToKeyframe = useCallback(
     (pct: number) => {
+      stopDirectorTour();
+      setHighlightedSliderIdx(0);
       if (activeMode === 'observer') {
         animateUniform('observerEntropy', pct * 12.0, 750);
       } else if (activeMode === 'fkcrt') {
@@ -354,8 +380,11 @@ const WorkstationApp: React.FC = () => {
         animateUniform('stabilizationSign', 1.0 - pct * 2.0, 750);
       }
     },
-    [activeMode, animateUniform]
+    [activeMode, animateUniform, stopDirectorTour]
   );
+
+  const getSimTime = useCallback(() => engineRef.current?.getSimTime() || 0, []);
+  const handleScrubSimTime = useCallback((t: number) => engineRef.current?.setSimTime(t), []);
 
   const meta = THEOREM_SCENES[activeMode];
 
@@ -370,6 +399,7 @@ const WorkstationApp: React.FC = () => {
         activeMode={activeMode}
         meta={meta}
         uniforms={uniforms}
+        activeCameraPreset={activeCameraPreset}
         onCameraPreset={handleCameraPreset}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
@@ -383,7 +413,7 @@ const WorkstationApp: React.FC = () => {
         onToggleDashboardHidden={() => setDashboardHidden((d) => !d)}
         sideRacksHidden={sideRacksHidden}
         onToggleSideRacksHidden={() => setSideRacksHidden((s) => !s)}
-        onSelectMode={handleSelectMode}
+        onSelectMode={handleUserSelectMode}
         isDirectorRunning={isDirectorRunning}
         tourActIndex={tourActIndex}
         tourProgressPct={tourProgressPct}
@@ -397,10 +427,7 @@ const WorkstationApp: React.FC = () => {
       {!dashboardHidden && (
         <TopMenuBar
           activeMode={activeMode}
-          onSelectMode={(m) => {
-            stopDirectorTour();
-            handleSelectMode(m);
-          }}
+          onSelectMode={handleUserSelectMode}
           isDirectorRunning={isDirectorRunning}
           onToggleDirector={() =>
             isDirectorRunning ? stopDirectorTour() : startDirectorTour(0)
@@ -430,17 +457,20 @@ const WorkstationApp: React.FC = () => {
           onTriggerQuickAction={handleTriggerQuickAction}
           activeFileId={activeFileId}
           onSelectFile={handleOpenLeanFile}
-          onSelectMode={handleSelectMode}
+          onSelectMode={handleUserSelectMode}
           onHoverOrScrubSlider={setHighlightedSliderIdx}
+          highlightedSliderIdx={highlightedSliderIdx}
         />
       )}
 
       {!dashboardHidden && !sideRacksHidden && (
         <RightLeanIDE
           meta={meta}
+          uniforms={uniforms}
           openFileIds={openFileIds}
           activeFileId={activeFileId}
           onSelectFile={handleOpenLeanFile}
+          onSelectMode={handleUserSelectMode}
           onCloseFileTab={handleCloseFileTab}
           highlightedSliderIdx={highlightedSliderIdx}
         />
@@ -457,8 +487,8 @@ const WorkstationApp: React.FC = () => {
             setTimeScale(spd);
             if (engineRef.current) engineRef.current.timeScale = spd;
           }}
-          getSimTime={() => engineRef.current?.getSimTime() || 0}
-          onScrubSimTime={(t) => engineRef.current?.setSimTime(t)}
+          getSimTime={getSimTime}
+          onScrubSimTime={handleScrubSimTime}
           fps={fps}
           onJumpToKeyframe={handleJumpToKeyframe}
           tourStatusText={tourStatusText}
@@ -468,7 +498,7 @@ const WorkstationApp: React.FC = () => {
       <CommandPaletteModal
         isOpen={cmdOpen}
         onClose={() => setCmdOpen(false)}
-        onSelectMode={handleSelectMode}
+        onSelectMode={handleUserSelectMode}
         onOpenLeanFile={handleOpenLeanFile}
         onTriggerQuickAction={handleTriggerQuickAction}
       />

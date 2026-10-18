@@ -7,7 +7,7 @@ import { SceneModeId } from '../types/workstation';
 interface CommandPaletteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectMode: (mode: SceneModeId) => void;
+  onSelectMode: (mode: SceneModeId, targetFileId?: string) => void;
   onOpenLeanFile: (fileId: string) => void;
   onTriggerQuickAction: (mode: SceneModeId) => void;
 }
@@ -33,6 +33,8 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const lastMousePosRef = useRef<{ x: number; y: number }>({ x: -1, y: -1 });
 
   useEffect(() => {
     if (isOpen) {
@@ -41,6 +43,24 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       setTimeout(() => inputRef.current?.focus(), 20);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen || !resultsRef.current) return;
+    const selectedEl = resultsRef.current.querySelector('.ws-cmd-item.selected') as HTMLElement | null;
+    selectedEl?.scrollIntoView({ block: 'nearest' });
+  }, [selectedIndex, isOpen]);
 
   if (!isOpen) return null;
 
@@ -53,7 +73,10 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       !q ||
       s.title.toLowerCase().includes(q) ||
       s.shortTitle.toLowerCase().includes(q) ||
-      s.codeName.toLowerCase().includes(q)
+      s.codeName.toLowerCase().includes(q) ||
+      s.badgeNumber.toLowerCase().includes(q) ||
+      s.subtitle.toLowerCase().includes(q) ||
+      s.paperRef.toLowerCase().includes(q)
     ) {
       items.push({
         id: `scene-${s.id}`,
@@ -96,6 +119,18 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       }
     },
     {
+      id: 'trig-hologram',
+      group: 'INSTANT PHYSICS PHASE TRIGGERS',
+      title: 'Pulse 105-Qubit Willow Boundary Flux & Horizon Area Law (m_Bondi ↔ 2.25 M_☉)',
+      color: '#34d399',
+      iconType: 'zap',
+      execute: () => {
+        onSelectMode('hologram');
+        onTriggerQuickAction('hologram');
+        onClose();
+      }
+    },
+    {
       id: 'trig-retraction',
       group: 'INSTANT PHYSICS PHASE TRIGGERS',
       title: 'Execute F032 Sign-Error Shatter (+1 → -1 Cusp Singularity)',
@@ -119,7 +154,8 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     if (
       !q ||
       f.filename.toLowerCase().includes(q) ||
-      f.fullPath.toLowerCase().includes(q)
+      f.fullPath.toLowerCase().includes(q) ||
+      f.id.toLowerCase().includes(q)
     ) {
       items.push({
         id: `file-${f.id}`,
@@ -130,6 +166,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
         iconType: 'file',
         rightMeta: `${f.linesCount} LOC`,
         execute: () => {
+          onSelectMode(f.moduleGroup, f.id);
           onOpenLeanFile(f.id);
           onClose();
         }
@@ -155,6 +192,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
             }}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
+                e.preventDefault();
                 onClose();
               } else if (e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -173,53 +211,75 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           <kbd onClick={onClose} style={{ cursor: 'pointer' }}>ESC</kbd>
         </div>
 
-        <div className="ws-cmd-results">
-          {items.map((item, idx) => {
-            const showGroupHeader =
-              idx === 0 || items[idx - 1].group !== item.group;
-            const isSelected = idx === safeIdx;
+        <div className="ws-cmd-results" ref={resultsRef}>
+          {items.length === 0 ? (
+            <div
+              style={{
+                padding: '18px 12px',
+                textAlign: 'center',
+                color: '#64748b',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10.5px'
+              }}
+            >
+              No matching theorems, phase triggers, or Lean 4 files found for &ldquo;{query}&rdquo;
+            </div>
+          ) : (
+            items.map((item, idx) => {
+              const showGroupHeader =
+                idx === 0 || items[idx - 1].group !== item.group;
+              const isSelected = idx === safeIdx;
 
-            return (
-              <React.Fragment key={item.id}>
-                {showGroupHeader && (
-                  <div className="ws-cmd-group-title">{item.group}</div>
-                )}
-                <button
-                  className={`ws-cmd-item ${isSelected ? 'selected' : ''}`}
-                  onMouseEnter={() => setSelectedIndex(idx)}
-                  onClick={item.execute}
-                >
-                  <div className="ws-cmd-item-left">
-                    {item.iconType === 'alert' && (
-                      <AlertTriangle size={14} strokeWidth={1.5} color={item.color} />
-                    )}
-                    {item.iconType === 'orbit' && (
-                      <Orbit size={14} strokeWidth={1.5} color={item.color} />
-                    )}
-                    {item.iconType === 'zap' && (
-                      <Zap size={14} strokeWidth={1.5} color={item.color} />
-                    )}
-                    {item.iconType === 'file' && (
-                      <FileCode size={14} strokeWidth={1.5} color={item.color} />
-                    )}
-                    {item.code && (
-                      <span className="ws-cmd-item-code" style={{ color: item.color }}>
-                        {item.code}
-                      </span>
-                    )}
-                    <span className="ws-cmd-item-title">{item.title}</span>
-                  </div>
-                  {item.rightMeta ? (
-                    <span style={{ fontSize: '9px', color: '#64748b' }}>
-                      {item.rightMeta}
-                    </span>
-                  ) : (
-                    <CornerDownLeft size={13} strokeWidth={1.5} color="#64748b" />
+              return (
+                <React.Fragment key={item.id}>
+                  {showGroupHeader && (
+                    <div className="ws-cmd-group-title">{item.group}</div>
                   )}
-                </button>
-              </React.Fragment>
-            );
-          })}
+                  <button
+                    className={`ws-cmd-item ${isSelected ? 'selected' : ''}`}
+                    onMouseMove={(e) => {
+                      if (
+                        e.clientX !== lastMousePosRef.current.x ||
+                        e.clientY !== lastMousePosRef.current.y
+                      ) {
+                        lastMousePosRef.current = { x: e.clientX, y: e.clientY };
+                        setSelectedIndex(idx);
+                      }
+                    }}
+                    onClick={item.execute}
+                  >
+                    <div className="ws-cmd-item-left">
+                      {item.iconType === 'alert' && (
+                        <AlertTriangle size={14} strokeWidth={1.5} color={item.color} />
+                      )}
+                      {item.iconType === 'orbit' && (
+                        <Orbit size={14} strokeWidth={1.5} color={item.color} />
+                      )}
+                      {item.iconType === 'zap' && (
+                        <Zap size={14} strokeWidth={1.5} color={item.color} />
+                      )}
+                      {item.iconType === 'file' && (
+                        <FileCode size={14} strokeWidth={1.5} color={item.color} />
+                      )}
+                      {item.code && (
+                        <span className="ws-cmd-item-code" style={{ color: item.color }}>
+                          {item.code}
+                        </span>
+                      )}
+                      <span className="ws-cmd-item-title">{item.title}</span>
+                    </div>
+                    {item.rightMeta ? (
+                      <span style={{ fontSize: '9px', color: '#64748b' }}>
+                        {item.rightMeta}
+                      </span>
+                    ) : (
+                      <CornerDownLeft size={13} strokeWidth={1.5} color="#64748b" />
+                    )}
+                  </button>
+                </React.Fragment>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

@@ -61,16 +61,25 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
   onHideDashboard
 }) => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const deckRef = useRef<HTMLElement>(null);
+  const menuPodRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (deckRef.current && !deckRef.current.contains(e.target as Node)) {
+      if (menuPodRef.current && !menuPodRef.current.contains(e.target as Node)) {
+        setOpenMenu(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
         setOpenMenu(null);
       }
     };
     window.addEventListener('mousedown', handleClickOutside);
-    return () => window.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const toggleMenu = (name: string) => {
@@ -87,8 +96,9 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
   };
 
   return (
-    <header className="floating-command-deck" ref={deckRef}>
-      <div className="deck-pill-pod">
+    <header className="floating-command-deck">
+      {/* PILL 1: BRAND & NATIVE INSTRUMENT MENUS */}
+      <div className="deck-pill-pod" ref={menuPodRef}>
         <div
           className="ws-window-dots"
           title="Native Fullscreen Toggle"
@@ -195,6 +205,11 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
                   <span>Camera: Orthogonal Meridian (+Z)</span>
                   <kbd>Num 1</kbd>
                 </button>
+                <button onClick={() => { onCameraPreset('right'); setOpenMenu(null); }}>
+                  <Compass size={14} strokeWidth={1.5} />
+                  <span>Camera: Orthogonal Profile (+X)</span>
+                  <kbd>Num 3</kbd>
+                </button>
                 <button onClick={() => { onCameraPreset('closeup'); setOpenMenu(null); }}>
                   <Compass size={14} strokeWidth={1.5} />
                   <span>Camera: Singularity Macro</span>
@@ -250,6 +265,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         </div>
       </div>
 
+      {/* PILL 2: UNIFIED TACTILE MODULE SELECTOR DECK */}
       <div className="deck-pill-pod module-selector-pod">
         {(Object.keys(THEOREM_SCENES) as SceneModeId[]).map((mId, idx) => {
           const sc = THEOREM_SCENES[mId];
@@ -265,7 +281,10 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
                   '--pill-accent': sc.statusColor
                 } as React.CSSProperties
               }
-              onClick={() => onSelectMode(mId)}
+              onClick={() => {
+                setOpenMenu(null);
+                onSelectMode(mId);
+              }}
             >
               <span
                 className="pill-led-dot"
@@ -281,23 +300,31 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         })}
       </div>
 
+      {/* PILL 3: SLEEK RAYCAST-STYLE FLOATING PALETTE TRIGGER (⌘K) */}
       <motion.button
         whileHover={{ scale: 1.02, y: -1 }}
         whileTap={{ scale: 0.97 }}
         className="raycast-palette-pill"
-        onClick={onOpenCommandPalette}
+        onClick={() => {
+          setOpenMenu(null);
+          onOpenCommandPalette();
+        }}
       >
         <Search size={13} strokeWidth={1.5} color="#7dd3fc" />
         <span className="raycast-placeholder">Search AST...</span>
         <kbd className="raycast-kbd">⌘K</kbd>
       </motion.button>
 
+      {/* PILL 4: EXPLICIT ZOOM, HIDE DASHBOARD, & TOUR CONTROLS */}
       <div className="deck-pill-pod">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.94 }}
           className="ws-btn"
-          onClick={onZoomIn}
+          onClick={() => {
+            setOpenMenu(null);
+            onZoomIn();
+          }}
           title="Zoom In 3D Viewport (+)"
         >
           <ZoomIn size={13} strokeWidth={1.5} color="#7dd3fc" />
@@ -307,7 +334,10 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.94 }}
           className="ws-btn"
-          onClick={onZoomOut}
+          onClick={() => {
+            setOpenMenu(null);
+            onZoomOut();
+          }}
           title="Zoom Out 3D Viewport (-)"
         >
           <ZoomOut size={13} strokeWidth={1.5} color="#7dd3fc" />
@@ -317,18 +347,24 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.95 }}
           className="ws-btn"
-          onClick={onHideDashboard}
+          onClick={() => {
+            setOpenMenu(null);
+            onHideDashboard();
+          }}
           title="Hide Entire Dashboard HUD for Pure 3D View (Shortcut: H)"
         >
           <EyeOff size={13} strokeWidth={1.5} color="#fbbf24" />
-          <span>HIDE DASHBOARD</span>
+          <span className="hide-dash-text">HIDE DASHBOARD</span>
         </motion.button>
 
         <motion.button
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.96 }}
           className={`ws-btn ws-btn-primary ${isDirectorRunning ? 'active-sequence' : ''}`}
-          onClick={onToggleDirector}
+          onClick={() => {
+            setOpenMenu(null);
+            onToggleDirector();
+          }}
         >
           {isDirectorRunning ? (
             <Square size={13} strokeWidth={1.5} />
@@ -345,6 +381,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            setOpenMenu(null);
             onToggleMute();
           }}
           title="Mute / Unmute Studio Soundtrack Audio (Shortcut: M)"

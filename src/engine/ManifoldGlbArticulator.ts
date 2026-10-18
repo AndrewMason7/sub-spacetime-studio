@@ -29,6 +29,7 @@ export class ManifoldGlbArticulator {
   public loadAllManifolds(hosts: ManifoldHostGroups): void {
     const loader = new GLTFLoader();
 
+    // 1. M01: F348 Einstein 4-Saddle + CliffordCore (ShapeKey: Singularity_Collapse) + 5 Hopf Villarceau Rings
     loader.load(
       '/models/einstein_saddle.glb?v=v7',
       (gltf) => {
@@ -63,6 +64,7 @@ export class ManifoldGlbArticulator {
       () => {}
     );
 
+    // 2. M02: FKCRT LQG Sphere (ShapeKey: Fractal_Roughness) + 6 Aldous CRT Spines
     loader.load(
       '/models/fkcrt_manifold.glb?v=v7',
       (gltf) => {
@@ -97,6 +99,7 @@ export class ManifoldGlbArticulator {
       () => {}
     );
 
+    // 3. M03: CKS Kerr Funnel + KerrErgosphere (ShapeKey: Ergo_Bulge) + PhotonRing3M
     loader.load(
       '/models/cks_horizon_funnel.glb?v=v7',
       (gltf) => {
@@ -133,6 +136,7 @@ export class ManifoldGlbArticulator {
       () => {}
     );
 
+    // 4. M04: K3 Calabi-Yau Fermat Quintic (ShapeKey: Cusp_Shatter) + 2 Cusp Loci
     loader.load(
       '/models/k3_calabi_yau.glb?v=v7',
       (gltf) => {
@@ -187,8 +191,8 @@ export class ManifoldGlbArticulator {
           mesh.rotation.y = elapsed * 0.22 * ratio;
           mesh.rotation.x = Math.sin(elapsed * 0.35 + idx) * 0.18 * state.wormholeCoupling;
         } else {
-          mesh.rotation.y = elapsed * 0.16;
-          mesh.rotation.z = elapsed * 0.1;
+          mesh.rotation.y = elapsed * 0.16 + state.manifoldMorph * 0.55;
+          mesh.rotation.z = elapsed * 0.1 + state.manifoldMorph * 0.35;
         }
       }
     });
@@ -209,8 +213,9 @@ export class ManifoldGlbArticulator {
         if (mesh.name.includes('BesselTreeSpine')) {
           const idx = parseInt(mesh.name.replace(/\D/g, '') || '0', 10);
           const clampedRough = Math.min(1.35, state.excursionRoughness / 1.15);
+          const edgeScale = 0.88 + (state.planarEdgesN - 1.0) * 0.06;
           const sway = 1.0 + 0.08 * Math.sin(elapsed * 2.2 + idx * 1.1);
-          mesh.scale.setScalar((0.35 + 0.65 * treeFactor * clampedRough) * sway);
+          mesh.scale.setScalar((0.35 + 0.65 * treeFactor * clampedRough) * sway * edgeScale);
           mesh.rotation.z = Math.sin(elapsed * 1.6 + idx * 0.9) * 0.12 * clampedRough;
         }
       }
@@ -231,6 +236,10 @@ export class ManifoldGlbArticulator {
         if (mesh.name.includes('PhotonRing')) {
           const pulse = 1.0 + 0.03 * Math.sin(elapsed * 4.0);
           mesh.scale.setScalar((0.82 + state.bondiMass * 0.3) * pulse);
+          const mat = mesh.material as THREE.MeshPhysicalMaterial;
+          if (mat && typeof mat.emissiveIntensity === 'number') {
+            mat.emissiveIntensity = 1.15 + state.boundaryQubitFlux * 0.35;
+          }
         }
       }
     });
@@ -239,7 +248,8 @@ export class ManifoldGlbArticulator {
   public updateK3Manifold(elapsed: number, state: SimulationUniformState): void {
     if (!this.k3GlbGroup) return;
     const shatterFactor = Math.max(0, Math.min(1, (0.35 - state.stabilizationSign) / 1.35));
-    this.k3GlbGroup.rotation.z = -elapsed * 0.2;
+    const mScale = 0.85 + (state.doublePointCountM / 12.0) * 0.3;
+    this.k3GlbGroup.rotation.z = -elapsed * 0.2 + (state.calabiYauSlice - 1.57) * 0.45;
 
     this.k3GlbGroup.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -249,8 +259,8 @@ export class ManifoldGlbArticulator {
         }
         if (mesh.name.includes('CuspDoublePointLocus')) {
           const idx = parseInt(mesh.name.replace(/\D/g, '') || '0', 10);
-          mesh.scale.setScalar(0.88 + shatterFactor * 0.32);
-          mesh.rotation.x = elapsed * (idx === 0 ? 0.35 : -0.35);
+          mesh.scale.setScalar((0.88 + shatterFactor * 0.32) * mScale);
+          mesh.rotation.x = elapsed * (idx === 0 ? 0.35 : -0.35) + (state.calabiYauSlice - 1.57) * 0.3;
         } else {
           mesh.visible = state.stabilizationSign > -0.35;
         }

@@ -14,6 +14,7 @@ export interface DirectorTourCallbacks {
     target: number,
     durationMs: number
   ) => void;
+  onCancelUniformAnimations?: () => void;
   onCameraPreset: (preset: CameraPresetId) => void;
   onHighlightSlider: (sliderIdx: number | null) => void;
   onDirectorActiveChange?: (active: boolean) => void;
@@ -33,15 +34,15 @@ export interface DirectorTourState {
 const ACT_DURATION_MS = 9000;
 const TOTAL_ACTS = 4;
 
+/**
+ * v9.0 Choreographed 360° Orbital Crane & Multi-Axis Tumbling Director's Cut Tour (Infinite Loop ∞):
+ * - Continuously orbits 360° around and tumbles each 3D manifold across X/Y/Z axes so the user
+ *   sees the sides, poles, interior cross-sections, and underbelly of every geometry.
+ * - Automatically loops back to Act I after Act IV until explicitly stopped by the user.
+ */
 export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourState {
-  const {
-    onInitAudio,
-    onSelectMode,
-    onChangeUniform,
-    onAnimateUniform,
-    onHighlightSlider,
-    onDirectorActiveChange
-  } = callbacks;
+  const callbacksRef = useRef(callbacks);
+  callbacksRef.current = callbacks;
 
   const [isDirectorRunning, setIsDirectorRunning] = useState(false);
   const [tourActIndex, setTourActIndex] = useState(0);
@@ -63,26 +64,31 @@ export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourS
   }, []);
 
   const stopDirectorTour = useCallback(() => {
+    if (!isRunningRef.current && !isDirectorRunning) return;
     isRunningRef.current = false;
     clearTimers();
+    callbacksRef.current.onCancelUniformAnimations?.();
     setIsDirectorRunning(false);
+    setTourActIndex(0);
     setTourStatusText(null);
     setTourNarration(null);
     setTourProgressPct(0);
-    onHighlightSlider(null);
-    onDirectorActiveChange?.(false);
-  }, [clearTimers, onHighlightSlider, onDirectorActiveChange]);
+    callbacksRef.current.onHighlightSlider(null);
+    callbacksRef.current.onDirectorActiveChange?.(false);
+  }, [clearTimers, isDirectorRunning]);
 
   const startDirectorTour = useCallback(
     (startAct = 0) => {
       clearTimers();
-      onInitAudio();
+      const cb = callbacksRef.current;
+      cb.onCancelUniformAnimations?.();
+      cb.onInitAudio();
       isRunningRef.current = true;
 
       const clampedStart = Math.max(0, Math.min(TOTAL_ACTS - 1, startAct));
       setIsDirectorRunning(true);
       setTourActIndex(clampedStart);
-      onDirectorActiveChange?.(true);
+      cb.onDirectorActiveChange?.(true);
 
       const tourStartWall = performance.now() - clampedStart * ACT_DURATION_MS;
       const totalTourDuration = TOTAL_ACTS * ACT_DURATION_MS;
@@ -103,120 +109,152 @@ export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourS
         directorTimerRef.current.push(id);
       };
 
+      // =======================================================================
+      // ACT I (0.0s – 9.0s): M01 · OBSERVER HILBERT HOLOGRAM & EINSTEIN SADDLE
+      // =======================================================================
       if (clampedStart <= 0) {
         scheduleAt(0, () => {
+          const c = callbacksRef.current;
           setTourActIndex(0);
           setTourStatusText('ACT I/IV (∞ LOOP) · OBSERVER HILBERT 360° TUMBLE (M01)');
           setTourNarration(
             'Without an internal Observer (S_Ob = 0), a closed universe collapses to dim(𝓗) = 1...'
           );
-          onSelectMode('observer');
-          onHighlightSlider(0);
-          onChangeUniform('observerEntropy', 0.0);
+          c.onSelectMode('observer');
+          c.onHighlightSlider(0);
+          c.onChangeUniform('observerEntropy', 0.0);
+          c.onChangeUniform('wormholeCoupling', 1.0);
+          c.onChangeUniform('manifoldMorph', 0.65);
         });
         scheduleAt(1200, () => {
+          const c = callbacksRef.current;
           setTourNarration(
             'Injecting Observer Worldline (S_Ob → 10.8): 360° Orbital Sweep of 5 Interlocked Hopf Villarceau Rings!'
           );
-          onAnimateUniform('observerEntropy', 10.8, 3600);
+          c.onAnimateUniform('observerEntropy', 10.8, 3600);
         });
         scheduleAt(5000, () => {
+          const c = callbacksRef.current;
           setTourNarration(
             'Tumbling F348 Einstein 4-Manifold Saddle across X/Y/Z axes: Round S⁴ → Fubini–Study ℂℙ² → ℝℙ⁴'
           );
-          onHighlightSlider(2);
-          onAnimateUniform('manifoldMorph', 1.75, 3400);
+          c.onHighlightSlider(2);
+          c.onAnimateUniform('manifoldMorph', 1.75, 3400);
         });
       }
 
+      // =======================================================================
+      // ACT II (9.0s – 18.0s): M02 · FK-CRT CRITICAL PHASE TRANSITION AT q = 4
+      // =======================================================================
       if (clampedStart <= 1) {
         scheduleAt(9000, () => {
+          const c = callbacksRef.current;
           setTourActIndex(1);
           setTourStatusText('ACT II/IV (∞ LOOP) · FK-CRT PHASE TRANSITION AT q = 4.0 (M02)');
           setTourNarration(
             'Subcritical Regime (q = 1.8 ≤ 4.0): Smooth Liouville Quantum Gravity Sphere (d_H = 4.0)...'
           );
-          onSelectMode('fkcrt');
-          onHighlightSlider(0);
-          onChangeUniform('clusterParameterQ', 1.8);
+          c.onSelectMode('fkcrt');
+          c.onHighlightSlider(0);
+          c.onChangeUniform('clusterParameterQ', 1.8);
+          c.onChangeUniform('excursionRoughness', 1.15);
+          c.onChangeUniform('planarEdgesN', 3.2);
         });
         scheduleAt(10800, () => {
+          const c = callbacksRef.current;
           setTourNarration(
             'Crossing Critical Threshold q = 4.0 → 7.4: 360° Side & Polar View of Fractal Aldous CRT Spines (d_H = 2)!'
           );
-          onAnimateUniform('clusterParameterQ', 7.4, 3800);
+          c.onAnimateUniform('clusterParameterQ', 7.4, 3800);
         });
         scheduleAt(15000, () => {
+          const c = callbacksRef.current;
           setTourNarration(
             'Inspecting 3D Bessel Bridge Excursion ||B_t - t B_1||_3 from all angles...'
           );
-          onHighlightSlider(1);
-          onAnimateUniform('excursionRoughness', 1.85, 2500);
+          c.onHighlightSlider(1);
+          c.onAnimateUniform('excursionRoughness', 1.85, 2500);
         });
       }
 
+      // =======================================================================
+      // ACT III (18.0s – 27.0s): M03 · CKS HORIZON & 105-QUBIT WILLOW SURFACE CODE
+      // =======================================================================
       if (clampedStart <= 2) {
         scheduleAt(18000, () => {
+          const c = callbacksRef.current;
           setTourActIndex(2);
           setTourStatusText('ACT III/IV (∞ LOOP) · CKS KERR FUNNEL 360° PROFILE (M03)');
           setTourNarration(
             'CKSBondiPenrose.lean: Tilting 3D Carter Funnel to reveal full hyperboloidal gravity well profile...'
           );
-          onSelectMode('hologram');
-          onHighlightSlider(0);
-          onChangeUniform('bondiMass', 0.85);
+          c.onSelectMode('hologram');
+          c.onHighlightSlider(0);
+          c.onChangeUniform('bondiMass', 0.85);
+          c.onChangeUniform('boundaryQubitFlux', 1.6);
+          c.onChangeUniform('kerrSpin', 0.72);
         });
         scheduleAt(20000, () => {
+          const c = callbacksRef.current;
           setTourNarration(
             '360° Crane Orbit around Kerr Ergosphere, Lense–Thirring Torus & Precessing 3M Photon Geodesic!'
           );
-          onHighlightSlider(2);
-          onAnimateUniform('bondiMass', 2.25, 3800);
-          onAnimateUniform('boundaryQubitFlux', 2.85, 3800);
-          onAnimateUniform('kerrSpin', 0.95, 3800);
+          c.onHighlightSlider(0);
+          c.onAnimateUniform('bondiMass', 2.25, 3800);
+          c.onAnimateUniform('boundaryQubitFlux', 2.85, 3800);
+          c.onAnimateUniform('kerrSpin', 0.95, 3800);
+        });
+        scheduleAt(22800, () => {
+          const c = callbacksRef.current;
+          c.onHighlightSlider(1);
+        });
+        scheduleAt(25200, () => {
+          const c = callbacksRef.current;
+          c.onHighlightSlider(2);
         });
       }
 
+      // =======================================================================
+      // ACT IV (27.0s – 36.0s): M04 · F032 SIGN-ERROR K3 STABILIZATION SHATTER
+      // =======================================================================
       if (clampedStart <= 3) {
         scheduleAt(27000, () => {
+          const c = callbacksRef.current;
           setTourActIndex(3);
           setTourStatusText('ACT IV/IV (∞ LOOP) · F032 K3 QUINTIC SHATTER (+1 → -1) (M04)');
           setTourNarration(
             'Unverified PDF Draft Assumption (+1 Sign): Smooth Hanson Fermat Quintic Calabi–Yau Slice...'
           );
-          onSelectMode('retraction');
-          onHighlightSlider(0);
-          onChangeUniform('stabilizationSign', 1.0);
+          c.onSelectMode('retraction');
+          c.onHighlightSlider(0);
+          c.onChangeUniform('stabilizationSign', 1.0);
+          c.onChangeUniform('doublePointCountM', 6.0);
+          c.onChangeUniform('calabiYauSlice', 1.57);
         });
         scheduleAt(29000, () => {
+          const c = callbacksRef.current;
           setTourNarration(
             'Injecting Cusp Reality (-1 Sign): I_new = -2m ≠ 0 — 360° Tumble of Shattering K3 & Cusp Loci!'
           );
-          onAnimateUniform('stabilizationSign', -1.0, 2600);
+          c.onAnimateUniform('stabilizationSign', -1.0, 2600);
         });
         scheduleAt(32500, () => {
+          const c = callbacksRef.current;
           setTourNarration(
             'Lean 4 `omega` catches the sign error in 0.01s — Seamless Loop restarting at Act I...'
           );
-          onHighlightSlider(1);
+          c.onHighlightSlider(0);
         });
       }
 
+      // SEAMLESS INFINITE LOOP: Restart from Act 0 unless the user stopped the tour!
       scheduleAt(36000, () => {
         if (isRunningRef.current) {
           startDirectorTour(0);
         }
       });
     },
-    [
-      clearTimers,
-      onInitAudio,
-      onSelectMode,
-      onHighlightSlider,
-      onChangeUniform,
-      onAnimateUniform,
-      onDirectorActiveChange
-    ]
+    [clearTimers]
   );
 
   const jumpToTourAct = useCallback(

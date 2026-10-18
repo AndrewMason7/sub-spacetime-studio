@@ -33,6 +33,7 @@ interface Viewport3DStageProps {
   activeMode: SceneModeId;
   meta: TheoremMetadata;
   uniforms: SimulationUniformState;
+  activeCameraPreset?: CameraPresetId | null;
   onCameraPreset: (preset: CameraPresetId) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -69,6 +70,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
   activeMode,
   meta,
   uniforms,
+  activeCameraPreset = 'perspective',
   onCameraPreset,
   onZoomIn,
   onZoomOut,
@@ -119,6 +121,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
 
   return (
     <div className="fullscreen-3d-stage">
+      {/* FULL-BLEED 100VW × 100VH WEBGL2 CANVAS */}
       <div id="canvas-viewport" ref={viewportRef} />
 
       {dashboardHidden ? (
@@ -203,6 +206,10 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
         </div>
       ) : (
         <div className="center-stage-hud">
+          {/* =================================================================
+              ULTRA-SLIM TOP HUD STRIP (OR TOP-DOCKED DIRECTOR'S CUT BAR)
+              Leaves 90% of the vertical center viewport completely unobstructed!
+             ================================================================= */}
           <AnimatePresence mode="wait">
             {isDirectorRunning ? (
               <motion.div
@@ -216,7 +223,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                 <div className="director-banner-top">
                   <div className="director-badge">
                     <Film size={12} strokeWidth={1.5} color="#fbbf24" />
-                    <span>DIRECTOR&apos;S CUT</span>
+                    <span>DIRECTOR&apos;S CUT · 360° ∞ LOOP</span>
                   </div>
 
                   <div className="director-act-pills">
@@ -307,6 +314,10 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
             )}
           </AnimatePresence>
 
+          {/* =================================================================
+              SINGLE-LINE ULTRA-COMPACT BOTTOM MICRO-DOCK PILL
+              Zero stacked toolbars! Everything in one sleek 28px instrument pill.
+             ================================================================= */}
           <div className="center-hud-bottom-stack">
             <AnimatePresence>
               {showFormulaOverlay && (
@@ -379,7 +390,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                 <button
                   type="button"
                   key={preset}
-                  className="vp-tool-btn"
+                  className={`vp-tool-btn ${activeCameraPreset === preset ? 'active' : ''}`}
                   onClick={() => onCameraPreset(preset)}
                 >
                   {label}
@@ -395,7 +406,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                 title="Toggle Coordinate Floor Grid (G)"
               >
                 <Grid size={12} strokeWidth={1.5} />
-                <span>GRID</span>
+                <span className="vp-btn-label">GRID</span>
               </button>
 
               <button
@@ -405,7 +416,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                 title="Toggle Orbital Gimbal Rotation (O)"
               >
                 <Compass size={12} strokeWidth={1.5} />
-                <span>ORBIT</span>
+                <span className="vp-btn-label">ORBIT</span>
               </button>
 
               <button
@@ -415,14 +426,14 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                 title="Show / Hide Floating LaTeX Formula Overlay"
               >
                 <Sigma size={12} strokeWidth={1.5} />
-                <span>EQ</span>
+                <span className="vp-btn-label">EQ</span>
               </button>
 
               <button
                 type="button"
                 className="vp-tool-btn"
                 onClick={onCaptureFrame}
-                title="Capture PNG Frame"
+                title="Capture PNG Frame (⌘P)"
               >
                 <Camera size={12} strokeWidth={1.5} />
               </button>
@@ -440,7 +451,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                 ) : (
                   <PanelLeftClose size={12} strokeWidth={1.5} />
                 )}
-                <span>{sideRacksHidden ? 'PANELS+' : 'PANELS'}</span>
+                <span className="vp-btn-label">{sideRacksHidden ? 'PANELS+' : 'PANELS'}</span>
               </button>
 
               <button
@@ -450,7 +461,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                 title="Hide Entire Dashboard HUD for Pure 3D View (Shortcut: H)"
               >
                 <EyeOff size={12} strokeWidth={1.5} />
-                <span>PURE 3D</span>
+                <span className="vp-btn-label">PURE 3D</span>
               </button>
 
               <button
@@ -473,7 +484,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                 ) : (
                   <Volume2 size={12} strokeWidth={1.5} color="#34d399" />
                 )}
-                <span>{isMuted ? 'MUTED' : 'MUTE'}</span>
+                <span className="vp-btn-label">{isMuted ? 'MUTED' : 'MUTE'}</span>
               </button>
             </div>
           </div>

@@ -49,12 +49,12 @@ export function createFKCRTScene(): FKCRTSceneHandles {
       vExcursionHeight = excursion;
 
       float gamma = clamp(sqrt(uQ) * 0.42, 0.3, 0.95);
-      float lqgRadius = 2.25 * (1.0 + 0.28 * gamma * (excursion - 0.5));
+      float lqgRadius = 2.15 * (1.0 + 0.22 * gamma * (excursion - 0.5));
       vec3 lqgPos = dir * lqgRadius;
 
       float branchAngle = abs(sin(dir.x * 5.0) * sin(dir.y * 5.0) * sin(dir.z * 5.0));
       float spine = pow(branchAngle, 0.28);
-      float dendriteRadius = 0.18 + pow(excursion, 1.85) * 3.85 * spine;
+      float dendriteRadius = clamp(0.28 + pow(excursion, 1.45) * 2.25 * spine, 0.25, 2.65);
       vec3 treePos = dir * dendriteRadius;
       treePos += cross(dir, vec3(0.0, 1.0, 0.0)) * 0.25 * sin(excursion * 8.0 + uTime * 2.0) * treePhase;
 
@@ -146,8 +146,8 @@ export function createFKCRTScene(): FKCRTSceneHandles {
         float treePhase = smoothstep(3.85, 4.35, uQ);
         vec3 dir = normalize(position);
         float branch = pow(abs(sin(dir.x * 5.0) * sin(dir.y * 5.0) * sin(dir.z * 5.0)), 0.25);
-        float r = mix(2.45 + 0.3 * aSeed.x, 0.3 + 4.4 * branch * aSeed.y * uRoughness, treePhase);
-        vec3 p = dir * r + 0.12 * sin(uTime * 3.0 + aSeed * 15.0) * treePhase;
+        float r = clamp(mix(2.25 + 0.25 * aSeed.x, 0.35 + 2.35 * branch * aSeed.y * uRoughness, treePhase), 0.3, 2.75);
+        vec3 p = dir * r + 0.10 * sin(uTime * 3.0 + aSeed * 15.0) * treePhase;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
         gl_PointSize = mix(5.0, 14.0, treePhase * aSeed.z) / max(1.0, -mv.z);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, FastForward, Layers } from 'lucide-react';
 import { SceneModeId, TheoremMetadata } from '../types/workstation';
 
@@ -30,15 +30,28 @@ export const BottomTimelineDock: React.FC<BottomTimelineDockProps> = ({
   tourStatusText
 }) => {
   const [simTimeDisplay, setSimTimeDisplay] = useState(0);
+  const getSimTimeRef = useRef(getSimTime);
+  getSimTimeRef.current = getSimTime;
+  const isScrubbingRef = useRef(false);
 
   useEffect(() => {
     const id = setInterval(() => {
-      setSimTimeDisplay(getSimTime());
+      if (!isScrubbingRef.current) {
+        setSimTimeDisplay(getSimTimeRef.current());
+      }
     }, 80);
     return () => clearInterval(id);
-  }, [getSimTime]);
+  }, []);
 
-  const cycleTime = (simTimeDisplay % 30) / 30;
+  const applyTimelineScrub = (pct: number) => {
+    const clampedPct = Math.max(0, Math.min(1, pct));
+    const targetSimTime = clampedPct * 30;
+    onScrubSimTime(targetSimTime);
+    setSimTimeDisplay(targetSimTime);
+    onJumpToKeyframe(clampedPct);
+  };
+
+  const cycleTime = ((simTimeDisplay % 30) + 30) % 30 / 30;
 
   return (
     <footer className="ws-timeline-statusbar">
@@ -58,7 +71,10 @@ export const BottomTimelineDock: React.FC<BottomTimelineDockProps> = ({
 
         <button
           className="ws-transport-btn"
-          onClick={() => onScrubSimTime(0)}
+          onClick={() => {
+            onScrubSimTime(0);
+            setSimTimeDisplay(0);
+          }}
           title="Reset Simulation Clock"
         >
           <RotateCcw size={13} strokeWidth={1.5} />
@@ -81,25 +97,26 @@ export const BottomTimelineDock: React.FC<BottomTimelineDockProps> = ({
         </span>
       </div>
 
+      {/* Interactive Named Keyframe Presets + Scrubber Bar */}
       <div className="ws-timeline-track-area">
         <div className="kf-preset-pills">
           <button
             className="kf-preset-btn"
-            onClick={() => onJumpToKeyframe(0.0)}
+            onClick={() => applyTimelineScrub(0.08)}
             title="Animate to Initial / Ground State"
           >
             KF1: GROUND
           </button>
           <button
             className="kf-preset-btn critical"
-            onClick={() => onJumpToKeyframe(0.5)}
+            onClick={() => applyTimelineScrub(0.5)}
             title="Animate to Critical Phase Threshold"
           >
             KF2: CRITICAL
           </button>
           <button
             className="kf-preset-btn"
-            onClick={() => onJumpToKeyframe(0.95)}
+            onClick={() => applyTimelineScrub(0.92)}
             title="Animate to Asymptotic Saturation Limit"
           >
             KF3: SATURATED
@@ -108,10 +125,29 @@ export const BottomTimelineDock: React.FC<BottomTimelineDockProps> = ({
 
         <div
           className="ws-timeline-bar"
-          onClick={(e) => {
+          onPointerDown={(e) => {
+            if ((e.target as HTMLElement).classList.contains('ws-kf-diamond')) return;
+            isScrubbingRef.current = true;
+            e.currentTarget.setPointerCapture(e.pointerId);
             const rect = e.currentTarget.getBoundingClientRect();
-            const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-            onJumpToKeyframe(pct);
+            const pct = (e.clientX - rect.left) / rect.width;
+            applyTimelineScrub(pct);
+          }}
+          onPointerMove={(e) => {
+            if (!isScrubbingRef.current) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const pct = (e.clientX - rect.left) / rect.width;
+            applyTimelineScrub(pct);
+          }}
+          onPointerUp={(e) => {
+            if (!isScrubbingRef.current) return;
+            isScrubbingRef.current = false;
+            try {
+              e.currentTarget.releasePointerCapture(e.pointerId);
+            } catch {}
+          }}
+          onPointerCancel={() => {
+            isScrubbingRef.current = false;
           }}
         >
           <div
@@ -124,17 +160,29 @@ export const BottomTimelineDock: React.FC<BottomTimelineDockProps> = ({
           <span
             className="ws-kf-diamond"
             style={{ left: '8%' }}
-            onClick={(e) => { e.stopPropagation(); onJumpToKeyframe(0.0); }}
+            title="Jump to KF1: Ground State"
+            onClick={(e) => {
+              e.stopPropagation();
+              applyTimelineScrub(0.08);
+            }}
           />
           <span
             className="ws-kf-diamond critical"
             style={{ left: '50%' }}
-            onClick={(e) => { e.stopPropagation(); onJumpToKeyframe(0.5); }}
+            title="Jump to KF2: Critical Phase Threshold"
+            onClick={(e) => {
+              e.stopPropagation();
+              applyTimelineScrub(0.5);
+            }}
           />
           <span
             className="ws-kf-diamond"
             style={{ left: '92%' }}
-            onClick={(e) => { e.stopPropagation(); onJumpToKeyframe(0.95); }}
+            title="Jump to KF3: Asymptotic Saturation Limit"
+            onClick={(e) => {
+              e.stopPropagation();
+              applyTimelineScrub(0.92);
+            }}
           />
         </div>
       </div>

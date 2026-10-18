@@ -17,8 +17,13 @@ import {
   Cpu
 } from 'lucide-react';
 import { LEAN_REPOSITORY_FILES } from '../data/leanRepositoryFiles';
-import { TheoremMetadata } from '../types/workstation';
-import { resolveActiveAstLine } from '../services/physicsTelemetryService';
+import { THEOREM_SCENES } from '../data/theoremsCatalog';
+import {
+  SceneModeId,
+  SimulationUniformState,
+  TheoremMetadata
+} from '../types/workstation';
+import { resolveActiveAstFocus } from '../services/physicsTelemetryService';
 
 const shikiHighlighterPromise = createHighlighterCore({
   themes: [nord],
@@ -28,32 +33,58 @@ const shikiHighlighterPromise = createHighlighterCore({
 
 interface RightLeanIDEProps {
   meta: TheoremMetadata;
+  uniforms: SimulationUniformState;
   openFileIds: string[];
   activeFileId: string;
   onSelectFile: (fileId: string) => void;
+  onSelectMode?: (mode: SceneModeId, targetFileId?: string) => void;
   onCloseFileTab: (fileId: string) => void;
   highlightedSliderIdx?: number | null;
 }
 
-const MATH_OPERATORS_REGEX = /(∀|∃|↦|→|←|↔|∧|∨|¬|≤|≥|≠|≈|∑|∏|∫|⨅|⨆|⊕|⊗|∈|∉|⊆|‖|⟨|⟩|ℝ≥0∞|ℝ≥0|ℝ|ℕ|ℤ|ℂ|Ω)/g;
+const MATH_OPERATORS_SPLIT_REGEX = /(∀|∃|↦|→|←|↔|∧|∨|¬|≤|≥|≠|≈|∑|∏|∫|⨅|⨆|⊕|⊗|∈|∉|⊆|‖|⟨|⟩|ℝ≥0∞|ℝ≥0|ℝ|ℕ|ℤ|ℂ|Ω)/g;
+const IS_MATH_OPERATOR_REGEX = /^(∀|∃|↦|→|←|↔|∧|∨|¬|≤|≥|≠|≈|∑|∏|∫|⨅|⨆|⊕|⊗|∈|∉|⊆|‖|⟨|⟩|ℝ≥0∞|ℝ≥0|ℝ|ℕ|ℤ|ℂ|Ω)$/;
 
 export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
   meta,
+  uniforms,
   openFileIds,
   activeFileId,
   onSelectFile,
+  onSelectMode,
   onCloseFileTab,
   highlightedSliderIdx
 }) => {
   const [copied, setCopied] = useState(false);
   const [diagTab, setDiagTab] = useState<'audit' | 'infoview'>('audit');
   const [tokenLines, setTokenLines] = useState<ThemedToken[][] | null>(null);
-  const [activeLineIdx, setActiveLineIdx] = useState<number>(11);
+  const [manualLineIdx, setManualLineIdx] = useState<number | null>(null);
   const editorScrollRef = useRef<HTMLDivElement>(null);
+  const lastScrolledLineRef = useRef<number>(-1);
 
   const activeFile =
     LEAN_REPOSITORY_FILES.find((f) => f.id === activeFileId) ||
     LEAN_REPOSITORY_FILES[0];
+
+  const fileMeta = THEOREM_SCENES[activeFile.moduleGroup] || meta;
+  const actualLinesCount = tokenLines
+    ? tokenLines.length
+    : activeFile.code.split('\n').length;
+
+  const astFocus = resolveActiveAstFocus(
+    activeFile.id,
+    highlightedSliderIdx,
+    uniforms,
+    actualLinesCount
+  );
+
+  // Reset manual click override whenever file or slider/physics focus changes
+  useEffect(() => {
+    setManualLineIdx(null);
+  }, [activeFile.id, highlightedSliderIdx, astFocus.lineIdx, astFocus.symbolToken]);
+
+  const activeLineIdx = manualLineIdx ?? astFocus.lineIdx;
+  const activeEndLineIdx = manualLineIdx ?? astFocus.endLineIdx;
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +96,6 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
           theme: 'nord'
         });
         setTokenLines(res.tokens);
-        setActiveLineIdx(Math.min(11, res.tokens.length - 1));
       })
       .catch(() => {
         if (!cancelled) setTokenLines(null);
@@ -75,19 +105,14 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
     };
   }, [activeFile.id, activeFile.code]);
 
+  // Smoothly auto-scroll the editor whenever the target AST line changes
   useEffect(() => {
-    const targetLine = resolveActiveAstLine(
-      activeFile.id,
-      highlightedSliderIdx,
-      activeFile.linesCount
-    );
-    if (targetLine === null) return;
-    setActiveLineIdx(targetLine);
-    if (editorScrollRef.current) {
-      const rowEl = editorScrollRef.current.children[targetLine] as HTMLElement | undefined;
-      rowEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }, [highlightedSliderIdx, activeFile.id, activeFile.linesCount]);
+    if (!editorScrollRef.current) return;
+    if (lastScrolledLineRef.current === activeLineIdx && manualLineIdx === null) return;
+    lastScrolledLineRef.current = activeLineIdx;
+    const rowEl = editorScrollRef.current.children[activeLineIdx] as HTMLElement | undefined;
+    rowEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [activeLineIdx, activeFile.id, tokenLines, manualLineIdx]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(activeFile.code).catch(() => {});
@@ -95,13 +120,35 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
     setTimeout(() => setCopied(false), 1400);
   };
 
-  const renderTokenWithMathAccent = (content: string, baseColor?: string) => {
-    const parts = content.split(MATH_OPERATORS_REGEX);
+  const renderTokenWithMathAccent = (
+    content: string,
+    baseColor?: string,
+    isTargetLine?: boolean
+  ): React.ReactNode => {
+    const targetSym = astFocus.symbolToken;
+    const hasTargetSym =
+      Boolean(isTargetLine && targetSym && content.includes(targetSym));
+
+    if (hasTargetSym && targetSym) {
+      const idx = content.indexOf(targetSym);
+      const before = content.slice(0, idx);
+      const match = content.slice(idx, idx + targetSym.length);
+      const after = content.slice(idx + targetSym.length);
+      return (
+        <>
+          {before && renderTokenWithMathAccent(before, baseColor, false)}
+          <span className="ide-token-focus-pulse">{match}</span>
+          {after && renderTokenWithMathAccent(after, baseColor, false)}
+        </>
+      );
+    }
+
+    const parts = content.split(MATH_OPERATORS_SPLIT_REGEX);
     if (parts.length === 1) {
       return <span style={{ color: baseColor || '#cbd5e1' }}>{content}</span>;
     }
     return parts.map((part, i) => {
-      if (MATH_OPERATORS_REGEX.test(part)) {
+      if (IS_MATH_OPERATOR_REGEX.test(part)) {
         return (
           <span
             key={i}
@@ -126,21 +173,24 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
   const renderCodeContent = () => {
     if (tokenLines) {
       return tokenLines.map((lineTokens, idx) => {
-        const isCurrent = idx === activeLineIdx;
+        const isPrimary = idx === activeLineIdx;
+        const isInBlock = idx >= activeLineIdx && idx <= activeEndLineIdx;
         return (
           <div
-            className={`ide-line-row ${isCurrent ? 'active-line' : ''}`}
+            className={`ide-line-row ${isPrimary ? 'active-line' : isInBlock ? 'active-block-line' : ''}`}
             key={idx}
-            onClick={() => setActiveLineIdx(idx)}
+            onClick={() => setManualLineIdx(idx)}
           >
-            <span className="ide-line-num">{idx + 1}</span>
+            <span className="ide-line-num">
+              {isPrimary ? `▸${idx + 1}` : idx + 1}
+            </span>
             <span className="ide-line-code">
               {lineTokens.length === 0 ? (
                 ' '
               ) : (
                 lineTokens.map((tok, tIdx) => (
                   <React.Fragment key={tIdx}>
-                    {renderTokenWithMathAccent(tok.content, tok.color)}
+                    {renderTokenWithMathAccent(tok.content, tok.color, isInBlock)}
                   </React.Fragment>
                 ))
               )}
@@ -151,22 +201,40 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
     }
 
     const rawLines = activeFile.code.split('\n');
-    return rawLines.map((line, idx) => (
-      <div
-        className={`ide-line-row ${idx === activeLineIdx ? 'active-line' : ''}`}
-        key={idx}
-        onClick={() => setActiveLineIdx(idx)}
-      >
-        <span className="ide-line-num">{idx + 1}</span>
-        <span className="ide-line-code">{line || ' '}</span>
-      </div>
-    ));
+    return rawLines.map((line, idx) => {
+      const isPrimary = idx === activeLineIdx;
+      const isInBlock = idx >= activeLineIdx && idx <= activeEndLineIdx;
+      return (
+        <div
+          className={`ide-line-row ${isPrimary ? 'active-line' : isInBlock ? 'active-block-line' : ''}`}
+          key={idx}
+          onClick={() => setManualLineIdx(idx)}
+        >
+          <span className="ide-line-num">
+            {isPrimary ? `▸${idx + 1}` : idx + 1}
+          </span>
+          <span className="ide-line-code">{line || ' '}</span>
+        </div>
+      );
+    });
   };
 
-  const isWithdrawn = activeFile.verificationBadge === 'WITHDRAWN_NOTICE';
+  const badgeType = activeFile.verificationBadge;
+  const isWithdrawn = badgeType === 'WITHDRAWN_NOTICE';
+  const isAuditDoc = badgeType === 'AUDIT_MARKDOWN';
+  const isComparator = badgeType === 'COMPARATOR_CHALLENGE';
+
+  const statusPillLabel = isWithdrawn
+    ? '0 LEAN // WITHDRAWN'
+    : isAuditDoc
+      ? 'AUDIT SPEC // MD'
+      : isComparator
+        ? 'LEAN 4 // COMPARATOR'
+        : 'KERNEL: 0 GOALS';
 
   return (
     <aside className="floating-instrument-panel right-lean-workspace">
+      {/* SAPPHIRE IDE HEADER ZONE */}
       <div
         className="ws-pane-header zone-header-ide"
         style={{ borderLeft: `3px solid ${activeFile.badgeColor}` }}
@@ -181,7 +249,7 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
             className={`kernel-status-pill ${isWithdrawn ? 'withdrawn' : 'verified'}`}
           >
             <span className="kernel-pill-dot" />
-            {isWithdrawn ? '0 LEAN // WITHDRAWN' : 'KERNEL: 0 GOALS'}
+            {statusPillLabel}
           </span>
 
           <motion.button
@@ -200,6 +268,7 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
         </div>
       </div>
 
+      {/* Multi-Tab Code Editor Bar */}
       <div className="ide-file-tabs">
         <div className="ide-tabs-scroll">
           {openFileIds.map((fid) => {
@@ -214,7 +283,10 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
                   borderTopColor: isActive ? file.badgeColor : 'transparent',
                   background: isActive ? `${file.badgeColor}18` : undefined
                 }}
-                onClick={() => onSelectFile(fid)}
+                onClick={() => {
+                  onSelectFile(fid);
+                  onSelectMode?.(file.moduleGroup, fid);
+                }}
               >
                 <FileCode size={14} strokeWidth={1.5} color={file.badgeColor} />
                 <span>{file.filename}</span>
@@ -235,20 +307,30 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
         </div>
       </div>
 
+      {/* Breadcrumb Path Bar + Live Token Pointer */}
       <div className="ide-breadcrumb">
         <Cpu size={12} strokeWidth={1.5} color="#38bdf8" style={{ flexShrink: 0 }} />
-        <span style={{ color: '#7dd3fc' }}>openai-math</span>
-        <span>/</span>
-        <span className="ide-breadcrumb-path">{activeFile.fullPath}</span>
+        <span className="ide-breadcrumb-path" title={activeFile.fullPath}>
+          {activeFile.filename}
+        </span>
+        <span
+          className="ide-ast-token-badge"
+          title={astFocus.phaseNote}
+        >
+          AST ▸ {astFocus.symbolToken}
+        </span>
         <span className="ide-ln-pill">
-          LN {activeLineIdx + 1} : {activeFile.linesCount}
+          LN {activeLineIdx + 1}
+          {activeEndLineIdx > activeLineIdx ? `–${activeEndLineIdx + 1}` : ''} / {actualLinesCount}
         </span>
       </div>
 
+      {/* Shiki Dark-Slate Token Viewport */}
       <div className="ide-editor-scroll" ref={editorScrollRef}>
         {renderCodeContent()}
       </div>
 
+      {/* WARM AMBER / GOLD SCALPEL AUDIT TERMINAL ZONE */}
       <div className="ide-diagnostics">
         <div className="ide-diag-tabs">
           <button
@@ -273,10 +355,12 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
 
         {diagTab === 'audit' ? (
           <div className="ide-diag-body">
-            <div style={{ color: '#fde68a', marginBottom: 4 }}>
-              <strong style={{ color: '#fbbf24' }}>Primary Source:</strong> {meta.paperRef}
+            <div style={{ color: '#fde68a', marginBottom: 3 }}>
+              <strong style={{ color: '#fbbf24' }}>AST Pointer (LN {activeLineIdx + 1}):</strong>{' '}
+              <span style={{ color: '#38bdf8', fontWeight: 700 }}>{astFocus.symbolToken}</span> —{' '}
+              <span style={{ color: '#e2e8f0' }}>{astFocus.phaseNote}</span>
             </div>
-            <div style={{ color: '#cbd5e1' }}>{meta.auditScopeNote}</div>
+            <div style={{ color: '#cbd5e1' }}>{fileMeta.auditScopeNote}</div>
             <table className="diag-table">
               <thead>
                 <tr>
@@ -289,16 +373,16 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
               <tbody>
                 <tr>
                   <td style={{ color: '#e0f2fe', fontWeight: 600 }}>
-                    {meta.argonPipelineStats.inputTokens}
+                    {fileMeta.argonPipelineStats.inputTokens}
                   </td>
                   <td style={{ color: '#f3e8ff', fontWeight: 600 }}>
-                    {meta.argonPipelineStats.outputTokens}
+                    {fileMeta.argonPipelineStats.outputTokens}
                   </td>
                   <td style={{ color: '#fef3c7', fontWeight: 600 }}>
-                    {meta.argonPipelineStats.shaderPasses}
+                    {fileMeta.argonPipelineStats.shaderPasses}
                   </td>
-                  <td style={{ color: meta.statusColor, fontWeight: 700 }}>
-                    {meta.argonPipelineStats.verificationLatency}
+                  <td style={{ color: fileMeta.statusColor, fontWeight: 700 }}>
+                    {fileMeta.argonPipelineStats.verificationLatency}
                   </td>
                 </tr>
               </tbody>
@@ -308,7 +392,9 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
           <div className="ide-diag-body" style={{ fontFamily: 'var(--font-mono)' }}>
             {isWithdrawn ? (
               <div style={{ color: '#f43f5e' }}>
-                <div>▼ Tactic State // CounterProof.lean:{activeLineIdx + 1}:2</div>
+                <div>
+                  ▼ Tactic State // CounterProof.lean:{activeLineIdx + 1}:2 [{astFocus.symbolToken}]
+                </div>
                 <div style={{ color: '#e2e8f0', margin: '4px 0' }}>
                   m : ℕ, hm : 0 &lt; m ⊢ signedDoublePoints m (-1) = -2 * ↑m ∧ signedDoublePoints m (-1) ≠ 0
                 </div>
@@ -316,19 +402,31 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
                   ✓ Goals accomplished (0 goals remaining) — omega proved I_new = -2m ≠ 0!
                 </div>
                 <div style={{ color: '#fbbf24', marginTop: 4 }}>
-                  ⚠ WARNING: Original manuscript had NO Lean 4 file; +1 sign assumption failed Eliashberg–Murphy cancellation.
+                  ▸ {astFocus.phaseNote}
+                </div>
+              </div>
+            ) : isAuditDoc ? (
+              <div>
+                <div style={{ color: '#fbbf24', marginBottom: 4 }}>
+                  ✓ Post-Audit Reference Specification — {activeFile.filename} loaded.
+                </div>
+                <div style={{ color: '#cbd5e1' }}>
+                  • 16 Proven Mathematical & Physical Walls • Strict Scalpel Separation Verified
+                </div>
+                <div style={{ color: '#38bdf8', marginTop: 6 }}>
+                  ▸ Active Wall Pointer (LN {activeLineIdx + 1}): {astFocus.symbolToken} — {astFocus.phaseNote}
                 </div>
               </div>
             ) : (
               <div>
                 <div style={{ color: '#34d399', marginBottom: 4 }}>
-                  ✓ leanprover/lean4:v4.34.1 — All declarations in {activeFile.filename} typechecked.
+                  ✓ leanprover/lean4:v4.34.1 — {isComparator ? 'Comparator Challenge AST' : 'Zero-Sorry Proof'} in {activeFile.filename} typechecked.
                 </div>
                 <div style={{ color: '#cbd5e1' }}>
-                  • Universes: u v w • Mathlib4 revision: 4.34.1-patched • Mesh: Blender 5.2 GLB Loaded
+                  • Universes: u v w • Mathlib4 revision: 4.34.1-patched • Symbol: <strong style={{ color: '#38bdf8' }}>{astFocus.symbolToken}</strong>
                 </div>
                 <div style={{ color: '#fbbf24', marginTop: 6 }}>
-                  ▸ Active Shader Binding: Line {activeLineIdx + 1} synchronized with DAW Uniform Rack.
+                  ▸ Live AST Binding (LN {activeLineIdx + 1}): {astFocus.phaseNote}
                 </div>
               </div>
             )}

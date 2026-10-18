@@ -7,7 +7,7 @@
   bottom: 44px;
   left: 308px;
   right: 402px;
-  z-index: 15;
+  z-index: 35;
   pointer-events: none;
   display: flex;
   flex-direction: column;
@@ -122,6 +122,13 @@
   padding: 3px 6px;
   gap: 2px;
   max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 1380px) {
+  .vp-btn-label {
+    display: none;
+  }
 }
 
 .vp-tool-btn {

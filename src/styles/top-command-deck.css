@@ -301,3 +301,11 @@
     0 0 0 1px rgba(244, 63, 94, 0.55);
   color: #fda4af;
 }
+
+@media (max-width: 1360px) {
+  .ws-brand-stack,
+  .pill-label,
+  .hide-dash-text {
+    display: none;
+  }
+}
