@@ -176,3 +176,17 @@
   align-items: center;
   gap: 5px;
 }
+
+@media (max-width: 768px) {
+  .ws-timeline-statusbar {
+    gap: 8px;
+    padding: 0 10px;
+    height: 32px;
+  }
+  .ws-status-right {
+    display: none;
+  }
+  .ws-speed-pills {
+    display: none;
+  }
+}

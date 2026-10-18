@@ -17,6 +17,7 @@ import { Viewport3DStage } from './components/Viewport3DStage';
 import { RightLeanIDE } from './components/RightLeanIDE';
 import { BottomTimelineDock } from './components/BottomTimelineDock';
 import { CommandPaletteModal } from './components/CommandPaletteModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const DEFAULT_UNIFORMS: SimulationUniformState = {
   observerEntropy: 8.4,
@@ -507,4 +508,8 @@ const WorkstationApp: React.FC = () => {
 };
 
 const rootEl = document.getElementById('app')!;
-createRoot(rootEl).render(<WorkstationApp />);
+createRoot(rootEl).render(
+  <ErrorBoundary>
+    <WorkstationApp />
+  </ErrorBoundary>
+);

@@ -128,3 +128,29 @@ body {
   background: rgba(148, 163, 184, 0.22);
   border-radius: 99px;
 }
+
+@media (max-width: 1024px) {
+  .left-instrument-rack {
+    width: 260px;
+  }
+  .right-lean-workspace {
+    width: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .left-instrument-rack {
+    width: calc(100vw - 24px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    max-height: 48vh;
+  }
+  .right-lean-workspace {
+    width: calc(100vw - 24px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: auto !important;
+    bottom: 46px !important;
+    height: 42vh;
+  }
+}

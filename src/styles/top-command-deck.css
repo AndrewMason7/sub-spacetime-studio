@@ -309,3 +309,23 @@
     display: none;
   }
 }
+
+@media (max-width: 768px) {
+  .floating-command-deck {
+    gap: 4px;
+    top: 6px;
+    left: 8px;
+    right: 8px;
+    overflow-x: auto;
+  }
+  .deck-pill-pod {
+    padding: 0 6px;
+    gap: 4px;
+  }
+  .ws-raycast-trigger {
+    display: none;
+  }
+  .ws-brand-title {
+    font-size: 10px;
+  }
+}
