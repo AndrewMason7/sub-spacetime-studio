@@ -1,18 +1,12 @@
 /**
- * SUB-SPACETIME STUDIO // STUDIO-MASTERED SOUNDTRACK & FOLEY ENGINE (v7.5)
+ * SUB-SPACETIME STUDIO // STUDIO-MASTERED SOUNDTRACK & FOLEY ENGINE (v8.0)
  *
- * Why v7.0 sounded like a "straight frequency":
- * - `bakeSeamlessPadBuffer` summed phase-locked integer multiples of 73 Hz (73, 146, 219, 292, 365 Hz).
- *   By Fourier's theorem, summing phase-locked integer harmonics of a single fundamental produces a
- *   single static periodic waveform at 73 Hz — which the human ear perceives as one flat, straight tone!
- *
- * How v7.5 delivers genuine, zero-lag cinematic music:
- * - Plays a studio-mastered 24-second 256kbps stereo soundtrack (`/audio/cosmic_soundtrack.mp3`)
- *   featuring a 4-chord progression (Fmaj9#11 -> G6add9 -> Am9 -> Em7add11), 5-voice CS-80 chorus
- *   swells, felt piano arpeggio notes, and a 3.2s stereo convolution reverb hall tail.
- * - Uses native hardware-decoded `HTMLAudioElement` for the soundtrack and chord swells
- *   (`/audio/swell_ignition.mp3`, `/audio/swell_phase.mp3`, `/audio/swell_shatter.mp3`)
- *   so main-thread CPU / WebGL overhead is 0.0%!
+ * Features:
+ * - Studio-mastered 24-second 256kbps stereo soundtrack (`/audio/cosmic_soundtrack.mp3`)
+ *   with 4-chord progression (Fmaj9#11 -> G6add9 -> Am9 -> Em7add11) & felt piano.
+ * - Rock-solid hardware Mute / Unmute state machine:
+ *   When muted, immediately pauses all HTMLAudioElements, zeroes volume, sets `.muted = true`,
+ *   and guards async `play()` promises so nothing can ever leak sound while muted.
  */
 
 export class AudioSynthesizer {
@@ -30,11 +24,17 @@ export class AudioSynthesizer {
   constructor() {
     if (typeof window !== 'undefined') {
       this.preloadAudioAssets();
-      const unlockOnce = () => {
-        this.init();
+      const unlockHandler = (e: Event) => {
+        const target = e.target as HTMLElement | null;
+        if (target && target.closest('[data-mute-toggle="true"]')) {
+          return;
+        }
+        if (!this.isMuted && !this.isRunning) {
+          this.init();
+        }
       };
-      window.addEventListener('pointerdown', unlockOnce, { once: true, passive: true });
-      window.addEventListener('keydown', unlockOnce, { once: true, passive: true });
+      window.addEventListener('pointerdown', unlockHandler, { passive: true });
+      window.addEventListener('keydown', unlockHandler, { passive: true });
     }
   }
 
@@ -43,40 +43,50 @@ export class AudioSynthesizer {
       this.bgMusic = new Audio('/audio/cosmic_soundtrack.mp3');
       this.bgMusic.loop = true;
       this.bgMusic.preload = 'auto';
-      this.bgMusic.volume = 0.48;
+      this.bgMusic.volume = this.targetVolume;
 
       this.swellClips.ignition = new Audio('/audio/swell_ignition.mp3');
       this.swellClips.ignition.preload = 'auto';
-      this.swellClips.ignition.volume = 0.55;
+      this.swellClips.ignition.volume = 0.52;
 
       this.swellClips.phase = new Audio('/audio/swell_phase.mp3');
       this.swellClips.phase.preload = 'auto';
-      this.swellClips.phase.volume = 0.55;
+      this.swellClips.phase.volume = 0.52;
 
       this.swellClips.shatter = new Audio('/audio/swell_shatter.mp3');
       this.swellClips.shatter.preload = 'auto';
-      this.swellClips.shatter.volume = 0.62;
+      this.swellClips.shatter.volume = 0.58;
     } catch {
       // Ignore in non-browser environments
     }
   }
 
   public init(): void {
+    if (this.isMuted) return;
     if (!this.bgMusic) {
       this.preloadAudioAssets();
     }
     if (!this.bgMusic || this.isMuted) return;
 
+    this.bgMusic.muted = false;
+    this.bgMusic.volume = this.targetVolume;
+
     if (this.bgMusic.paused) {
-      this.bgMusic.volume = this.targetVolume;
-      this.bgMusic
-        .play()
-        .then(() => {
-          this.isRunning = true;
-        })
-        .catch(() => {
-          // Will retry on next user interaction if blocked
-        });
+      const playPromise = this.bgMusic.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            if (this.isMuted && this.bgMusic) {
+              this.bgMusic.pause();
+              this.bgMusic.muted = true;
+              this.bgMusic.volume = 0;
+              this.isRunning = false;
+            } else {
+              this.isRunning = true;
+            }
+          })
+          .catch(() => {});
+      }
     } else {
       this.isRunning = true;
     }
@@ -84,30 +94,51 @@ export class AudioSynthesizer {
 
   public setMuted(muted: boolean): void {
     this.isMuted = muted;
+    if (!this.bgMusic) {
+      this.preloadAudioAssets();
+    }
     if (!this.bgMusic) return;
 
     if (muted) {
+      this.isRunning = false;
       this.bgMusic.muted = true;
+      this.bgMusic.volume = 0;
+      try {
+        this.bgMusic.pause();
+      } catch {}
       Object.values(this.swellClips).forEach((clip) => {
-        if (clip) clip.muted = true;
+        if (clip) {
+          clip.muted = true;
+          clip.volume = 0;
+          try {
+            clip.pause();
+            clip.currentTime = 0;
+          } catch {}
+        }
       });
     } else {
       this.bgMusic.muted = false;
+      this.bgMusic.volume = this.targetVolume;
       Object.values(this.swellClips).forEach((clip) => {
-        if (clip) clip.muted = false;
+        if (clip) {
+          clip.muted = false;
+          clip.volume = 0.52;
+        }
       });
       this.init();
     }
   }
 
   public playTactileTick(_pitchMultiplier = 1.0): void {
-    if (!this.isRunning && !this.isMuted) {
+    if (this.isMuted) return;
+    if (!this.isRunning) {
       this.init();
     }
   }
 
   public modulateFromPhysics(_mode: string, intensity: number, _criticalCrossed: boolean): void {
-    if (!this.isRunning && !this.isMuted) {
+    if (this.isMuted) return;
+    if (!this.isRunning) {
       this.init();
     }
     if (!this.bgMusic || this.isMuted) return;
@@ -118,10 +149,10 @@ export class AudioSynthesizer {
   }
 
   public triggerShockwave(type: 'ignition' | 'phase' | 'shatter'): void {
-    if (!this.isRunning && !this.isMuted) {
+    if (this.isMuted) return;
+    if (!this.isRunning) {
       this.init();
     }
-    if (this.isMuted) return;
 
     const clip = this.swellClips[type];
     if (!clip) return;
@@ -135,11 +166,20 @@ export class AudioSynthesizer {
         }
       });
 
+      clip.muted = false;
+      clip.volume = type === 'shatter' ? 0.58 : 0.52;
       clip.currentTime = 0;
-      clip.play().catch(() => {});
-    } catch {
-      // Ignore playback errors before gesture
-    }
+      const p = clip.play();
+      if (p !== undefined) {
+        p.then(() => {
+          if (this.isMuted) {
+            clip.pause();
+            clip.muted = true;
+            clip.volume = 0;
+          }
+        }).catch(() => {});
+      }
+    } catch {}
   }
 
   public dispose(): void {
@@ -154,9 +194,7 @@ export class AudioSynthesizer {
           clip.src = '';
         }
       });
-    } catch {
-      // Ignore cleanup errors
-    }
+    } catch {}
     this.isRunning = false;
   }
 }
