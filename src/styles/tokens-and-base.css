@@ -139,18 +139,8 @@ body {
 }
 
 @media (max-width: 768px) {
-  .left-instrument-rack {
-    width: calc(100vw - 24px) !important;
-    left: 12px !important;
-    right: 12px !important;
-    max-height: 48vh;
-  }
+  .left-instrument-rack,
   .right-lean-workspace {
-    width: calc(100vw - 24px) !important;
-    left: 12px !important;
-    right: 12px !important;
-    top: auto !important;
-    bottom: 46px !important;
-    height: 42vh;
+    display: none !important;
   }
 }

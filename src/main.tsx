@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
+import { motion } from 'framer-motion';
+import { Monitor, Play, Square, Volume2, VolumeX } from 'lucide-react';
 import './styles/workstation.css';
 import { THEOREM_SCENES } from './data/theoremsCatalog';
 import {
@@ -424,6 +426,77 @@ const WorkstationApp: React.FC = () => {
         isMuted={isMuted}
         onToggleMute={handleToggleMute}
       />
+
+      {/* MOBILE-ONLY TOP DESKTOP ADVISORY BADGE */}
+      <div className="mobile-desktop-notice-badge">
+        <Monitor size={12} strokeWidth={1.8} className="mobile-badge-icon" />
+        <span>Desktop Recommended for Full Avionics Workstation</span>
+      </div>
+
+      {/* MOBILE-ONLY FLOATING 3D ACTION DOCK WITH HERO "TOUR" BUTTON */}
+      <div className="mobile-floating-action-dock">
+        <div className="mobile-manifold-pills">
+          {(Object.keys(THEOREM_SCENES) as SceneModeId[]).map((mId, idx) => (
+            <button
+              key={mId}
+              type="button"
+              className={`mobile-mode-pill ${activeMode === mId ? 'active' : ''}`}
+              onClick={() => handleUserSelectMode(mId)}
+              style={{
+                '--pill-accent': THEOREM_SCENES[mId].statusColor
+              } as React.CSSProperties}
+            >
+              <span
+                className="mobile-pill-dot"
+                style={{ backgroundColor: THEOREM_SCENES[mId].statusColor }}
+              />
+              <span>M0{idx + 1}</span>
+            </button>
+          ))}
+        </div>
+
+        <motion.button
+          type="button"
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.94 }}
+          className={`mobile-floating-tour-btn ${isDirectorRunning ? 'running' : ''}`}
+          onClick={() => {
+            if (isDirectorRunning) {
+              stopDirectorTour();
+            } else {
+              startDirectorTour(0);
+            }
+          }}
+          title={isDirectorRunning ? 'Stop Tour' : 'Start 360° Director Tour'}
+        >
+          {isDirectorRunning ? (
+            <>
+              <Square size={12} strokeWidth={2} />
+              <span>STOP TOUR</span>
+              <span className="mobile-tour-pulse active" />
+            </>
+          ) : (
+            <>
+              <Play size={12} strokeWidth={2} fill="currentColor" />
+              <span>360° TOUR</span>
+              <span className="mobile-tour-pulse" />
+            </>
+          )}
+        </motion.button>
+
+        <button
+          type="button"
+          className="mobile-quick-audio-btn"
+          onClick={handleToggleMute}
+          title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
+          style={{
+            color: isMuted ? '#fda4af' : '#6ee7b7',
+            borderColor: isMuted ? 'rgba(244, 63, 94, 0.4)' : 'rgba(52, 211, 153, 0.4)'
+          }}
+        >
+          {isMuted ? <VolumeX size={13} strokeWidth={1.8} /> : <Volume2 size={13} strokeWidth={1.8} />}
+        </button>
+      </div>
 
       {!dashboardHidden && (
         <TopMenuBar
