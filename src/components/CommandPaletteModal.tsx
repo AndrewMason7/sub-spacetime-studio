@@ -159,7 +159,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     ) {
       items.push({
         id: `file-${f.id}`,
-        group: 'LEAN 4 FORMAL REPOSITORY FILES (openai/math & walls-theorems)',
+        group: 'LEAN 4 FORMAL REPOSITORY FILES (openai/math & arXiv Corpus)',
         code: f.filename,
         title: f.fullPath,
         color: f.badgeColor,

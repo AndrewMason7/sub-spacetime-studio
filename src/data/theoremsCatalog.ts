@@ -4,12 +4,12 @@ export const THEOREM_SCENES: Record<SceneModeId, TheoremMetadata> = {
   observer: {
     id: 'observer',
     codeName: 'MOD-01 // HILBERT-OBSERVER',
-    badgeNumber: 'M01 // WALL #13',
+    badgeNumber: 'M01 // ARXIV:2501.02359 & F348',
     shortTitle: 'OBSERVER HILBERT',
     title: 'Closed Universe Without Observer Collapses to dim(𝓗) = 1',
     subtitle: 'Harlow–Usatyuk–Zhao Theorem (MIT / KITP, arXiv:2501.02359) × F348 Einstein 4-Manifold Saddle',
     statusBadge: 'VERIFIED_THEOREM',
-    statusLabel: 'PROVEN QUANTUM GRAVITY WALL (arXiv:2501.02359)',
+    statusLabel: 'PROVEN QUANTUM GRAVITY BOUND (arXiv:2501.02359)',
     statusColor: '#7dd3fc',
     paperRef: 'D. Harlow (MIT), M. Usatyuk & Y. Zhao (KITP), arXiv:2501.02359 + EinsteinFour/Classification.lean (F348)',
     defaultFileId: 'einstein-four-classification',
@@ -20,7 +20,7 @@ export const THEOREM_SCENES: Record<SceneModeId, TheoremMetadata> = {
     latexPrimary: '\\dim(\\mathcal{H}_{\\text{closed}}) = 1 \\xrightarrow{\\text{+ Observer } Ob} \\dim(\\mathcal{H}_{\\text{eff}}) \\approx e^{S_{Ob}}',
     latexSecondary: 'R_{ij} = \\lambda g_{ij}, \\; M^4 \\in \\{ S^4, \\mathbb{CP}^2, \\mathbb{RP}^4 \\} \\text{ (F348)}',
     auditScopeNote:
-      'SCALPEL AUDIT: Wall #13 (Harlow–Usatyuk–Zhao, arXiv:2501.02359) proves dim(H_closed)=1 via replica wormholes in the gravitational path integral. Simultaneously, openai/math F348 (EinsteinFour/Classification.lean) is 100% Lean 4 verified across 198 modules with zero sorrys.',
+      'SCALPEL AUDIT: Harlow–Usatyuk–Zhao (MIT / KITP, arXiv:2501.02359) proves dim(H_closed)=1 via replica wormholes in the gravitational path integral. Simultaneously, openai/math F348 (EinsteinFour/Classification.lean) is 100% Lean 4 verified across 198 modules with zero sorrys.',
     argonPipelineStats: {
       inputTokens: '148,920 tok',
       outputTokens: '64,310 tok',

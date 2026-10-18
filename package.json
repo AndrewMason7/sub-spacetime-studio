@@ -1,7 +1,13 @@
 {
   "name": "sub-spacetime-studio",
-  "version": "1.0.0",
-  "description": "Sub-Spacetime & Hilbert Hologram Studio — Interactive 60FPS WebGL2/GLSL Quantum Gravity & Lean 4 Verification Command Center built with Gemini 4 Argon",
+  "version": "9.0.0",
+  "description": "Sub-Spacetime & Hilbert Hologram Studio — Interactive 60FPS WebGL2/GLSL Quantum Gravity & Lean 4 Formal Verification Workstation built with Gemini 4 Argon",
+  "author": "Andrew Mason <andrewmason.red@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AndrewMason7/sub-spacetime-studio.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5188",

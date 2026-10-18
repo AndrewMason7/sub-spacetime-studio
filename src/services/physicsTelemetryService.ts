@@ -72,7 +72,6 @@ export function resolveActiveAstFocus(
         phaseNote: `Replica Wormhole Island Coupling α_QES = ${(uniforms?.wormholeCoupling ?? 1.0).toFixed(2)}`
       };
     }
-    // Slider 2: manifoldMorph (0 = S⁴ -> LN 18, 1 = ℂℙ² -> LN 19, 2 = ℝℙ⁴ -> LN 20)
     const morph = uniforms?.manifoldMorph ?? 0.65;
     if (morph < 0.5) {
       return {
@@ -271,25 +270,25 @@ export function resolveActiveAstFocus(
   if (fileId === 'walls-compendium-spec') {
     if (sIdx === 0) {
       return {
-        lineIdx: clamp(13),
-        endLineIdx: clamp(14),
-        symbolToken: 'WALL #13',
-        phaseNote: 'Harlow–Usatyuk–Zhao Closed Universe Observer Theorem'
+        lineIdx: clamp(32),
+        endLineIdx: clamp(33),
+        symbolToken: 'effectiveHilbertDim',
+        phaseNote: 'Harlow–Usatyuk–Zhao Closed Universe Observer Bound (arXiv:2501.02359)'
       };
     }
     if (sIdx === 1) {
       return {
-        lineIdx: clamp(15),
-        endLineIdx: clamp(15),
-        symbolToken: 'WALL #14',
-        phaseNote: 'Quantum No-Cloning & Pure Quantum Agency Impossibility'
+        lineIdx: clamp(14),
+        endLineIdx: clamp(19),
+        symbolToken: 'FourManifoldInvariants',
+        phaseNote: 'Self-Dual / Anti-Self-Dual Weyl Curvature Decomposition'
       };
     }
     return {
-      lineIdx: clamp(16),
-      endLineIdx: clamp(17),
-      symbolToken: 'WALL #15',
-      phaseNote: 'Operational Closure & Intractability of IIT Phi'
+      lineIdx: clamp(22),
+      endLineIdx: clamp(28),
+      symbolToken: 'hitchin_thorpe_bound',
+      phaseNote: 'Hitchin–Thorpe Topological Inequality: 2χ(M) ≥ 3|τ(M)|'
     };
   }
 
@@ -303,9 +302,6 @@ export function resolveActiveAstFocus(
   };
 }
 
-/**
- * Legacy helper kept for compatibility: resolves the primary line index
- */
 export function resolveActiveAstLine(
   fileId: string,
   sliderIdx: number | null | undefined,
@@ -316,9 +312,6 @@ export function resolveActiveAstLine(
   return resolveActiveAstFocus(fileId, sliderIdx, uniforms, maxLines).lineIdx;
 }
 
-/**
- * Computes exact physical & topological invariants for the 3D Viewport HUD
- */
 export function computeViewportTelemetry(
   activeMode: SceneModeId,
   uniforms: SimulationUniformState
@@ -380,9 +373,6 @@ export function computeViewportTelemetry(
   };
 }
 
-/**
- * Computes real-time cathode-ray oscilloscope waveform sample from current physics state
- */
 export function computeOscilloscopeSample(
   activeMode: SceneModeId,
   uniforms: SimulationUniformState,
@@ -425,9 +415,6 @@ export function computeOscilloscopeSample(
   return { sample, traceColor };
 }
 
-/**
- * Returns the contextual quick-trigger button label and alert state for the Left Parameter Rack
- */
 export function getQuickActionSpec(
   activeMode: SceneModeId,
   uniforms: SimulationUniformState
