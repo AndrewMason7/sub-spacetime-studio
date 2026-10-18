@@ -288,7 +288,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         onClick={onOpenCommandPalette}
       >
         <Search size={13} strokeWidth={1.5} color="#7dd3fc" />
-        <span className="raycast-placeholder">Search Lean 4 AST, GLB...</span>
+        <span className="raycast-placeholder">Search AST...</span>
         <kbd className="raycast-kbd">⌘K</kbd>
       </motion.button>
 
