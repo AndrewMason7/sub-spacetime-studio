@@ -1,11 +1,10 @@
-import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import katex from 'katex';
 import {
   Grid,
   Compass,
   Camera,
-  Sparkles,
   Box,
   ZoomIn,
   ZoomOut,
@@ -13,7 +12,12 @@ import {
   EyeOff,
   Eye,
   PanelLeftClose,
-  PanelRightClose
+  PanelRightClose,
+  Film,
+  Square,
+  Volume2,
+  VolumeX,
+  Sigma
 } from 'lucide-react';
 import {
   CameraPresetId,
@@ -43,7 +47,22 @@ interface Viewport3DStageProps {
   sideRacksHidden: boolean;
   onToggleSideRacksHidden: () => void;
   onSelectMode: (mode: SceneModeId) => void;
+  isDirectorRunning?: boolean;
+  tourActIndex?: number;
+  tourProgressPct?: number;
+  tourNarration?: string | null;
+  onJumpToTourAct?: (actIdx: number) => void;
+  onStopDirectorTour?: () => void;
+  isMuted?: boolean;
+  onToggleMute?: () => void;
 }
+
+const TOUR_ACT_LABELS = [
+  'ACT I · M01',
+  'ACT II · M02',
+  'ACT III · M03',
+  'ACT IV · M04'
+];
 
 export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
   viewportRef,
@@ -63,12 +82,22 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
   onToggleDashboardHidden,
   sideRacksHidden,
   onToggleSideRacksHidden,
-  onSelectMode
+  onSelectMode,
+  isDirectorRunning = false,
+  tourActIndex = 0,
+  tourProgressPct = 0,
+  tourNarration = null,
+  onJumpToTourAct,
+  onStopDirectorTour,
+  isMuted = false,
+  onToggleMute
 }) => {
+  const [showFormulaOverlay, setShowFormulaOverlay] = useState(false);
   const kPrimaryRef = useRef<HTMLDivElement>(null);
   const kSecondaryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!showFormulaOverlay) return;
     if (kPrimaryRef.current) {
       katex.render(meta.latexPrimary, kPrimaryRef.current, {
         displayMode: false,
@@ -81,7 +110,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
         throwOnError: false
       });
     }
-  }, [meta, dashboardHidden]);
+  }, [meta, dashboardHidden, showFormulaOverlay]);
 
   const { invariantStr, topologyStr, glbMeshName } = computeViewportTelemetry(
     activeMode,
@@ -107,40 +136,37 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
 
           <span className="vp-tool-sep" />
 
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.94 }}
+          <button
+            type="button"
             className="vp-tool-btn zoom-highlight"
             onClick={onZoomIn}
             title="Zoom In (+)"
           >
-            <ZoomIn size={14} strokeWidth={1.5} />
-            <span>ZOOM IN +</span>
-          </motion.button>
+            <ZoomIn size={13} strokeWidth={1.5} />
+            <span>+</span>
+          </button>
 
           <span className="zoom-pct-readout">{zoomPct}%</span>
 
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.94 }}
+          <button
+            type="button"
             className="vp-tool-btn zoom-highlight"
             onClick={onZoomOut}
             title="Zoom Out (-)"
           >
-            <ZoomOut size={14} strokeWidth={1.5} />
-            <span>ZOOM OUT −</span>
-          </motion.button>
+            <ZoomOut size={13} strokeWidth={1.5} />
+            <span>−</span>
+          </button>
 
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.94 }}
+          <button
+            type="button"
             className="vp-tool-btn"
             onClick={() => onCameraPreset('perspective')}
             title="Reset Camera to 100%"
           >
-            <RotateCcw size={13} strokeWidth={1.5} />
+            <RotateCcw size={12} strokeWidth={1.5} />
             <span>RESET</span>
-          </motion.button>
+          </button>
 
           <span className="vp-tool-sep" />
 
@@ -153,126 +179,196 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
               M0{idx + 1}
             </button>
           ))}
+
+          <span className="vp-tool-sep" />
+
+          <button
+            type="button"
+            className="vp-tool-btn"
+            data-mute-toggle="true"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleMute?.();
+            }}
+            style={{ color: isMuted ? '#fda4af' : '#6ee7b7' }}
+          >
+            {isMuted ? (
+              <VolumeX size={13} strokeWidth={1.5} color="#f43f5e" />
+            ) : (
+              <Volume2 size={13} strokeWidth={1.5} color="#34d399" />
+            )}
+            <span>{isMuted ? 'MUTED' : 'AUDIO'}</span>
+          </button>
         </div>
       ) : (
         <div className="center-stage-hud">
-          <div className="vp-unified-top-pod">
-            <div className="vp-top-left-col">
-              <div className="vp-tag-row">
-                <span
-                  className="vp-status-chip"
-                  style={{ color: meta.statusColor }}
-                >
-                  {meta.statusLabel}
-                </span>
-                <span className="vp-codename-tag">[{meta.codeName}]</span>
-              </div>
-              <div className="vp-title-main">{meta.title}</div>
-              <div className="vp-subtitle-main">{meta.subtitle}</div>
-            </div>
+          <AnimatePresence mode="wait">
+            {isDirectorRunning ? (
+              <motion.div
+                key="director-top-strip"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="director-cut-hud-banner"
+              >
+                <div className="director-banner-top">
+                  <div className="director-badge">
+                    <Film size={12} strokeWidth={1.5} color="#fbbf24" />
+                    <span>DIRECTOR&apos;S CUT</span>
+                  </div>
 
-            <div className="vp-top-right-telemetry">
-              <div className="vp-axes-gizmo" title="Click axis to align optical gimbal">
-                <span className="axis-x" onClick={() => onCameraPreset('right')}>+X</span>
-                <span className="axis-y" onClick={() => onCameraPreset('top')}>+Y</span>
-                <span className="axis-z" onClick={() => onCameraPreset('front')}>+Z</span>
-              </div>
-              <div className="vp-telemetry-grid">
-                <div className="vp-metric-line">
-                  <span>INVARIANT</span>
-                  <span style={{ color: meta.statusColor }}>{invariantStr}</span>
+                  <div className="director-act-pills">
+                    {TOUR_ACT_LABELS.map((label, idx) => (
+                      <button
+                        key={label}
+                        className={`director-act-btn ${tourActIndex === idx ? 'active' : ''}`}
+                        onClick={() => onJumpToTourAct?.(idx)}
+                        title={`Jump to ${label}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <span
+                    style={{
+                      fontSize: 9,
+                      color: meta.statusColor,
+                      fontWeight: 700,
+                      marginLeft: 'auto',
+                      marginRight: 6
+                    }}
+                  >
+                    {invariantStr}
+                  </span>
+
+                  <button
+                    className="director-stop-btn"
+                    onClick={onStopDirectorTour}
+                    title="Exit Director Tour"
+                  >
+                    <Square size={10} strokeWidth={1.5} />
+                    <span>EXIT</span>
+                  </button>
                 </div>
-                <div className="vp-metric-line">
-                  <span>TOPOLOGY</span>
-                  <span>{topologyStr}</span>
+
+                {tourNarration && (
+                  <div className="director-narration-line">{tourNarration}</div>
+                )}
+
+                <div className="director-progress-track">
+                  <div
+                    className="director-progress-fill"
+                    style={{
+                      width: `${tourProgressPct}%`,
+                      background: `linear-gradient(90deg, #38bdf8, ${meta.statusColor})`
+                    }}
+                  />
                 </div>
-                <div className="vp-metric-line">
-                  <span>MESH</span>
-                  <span style={{ color: '#94a3b8' }}>
-                    <Box size={11} strokeWidth={1.5} style={{ display: 'inline', marginRight: 3 }} />
-                    {glbMeshName}
+              </motion.div>
+            ) : (
+              <motion.div
+                key={`slim-hud-${activeMode}`}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+                className="vp-slim-top-strip"
+              >
+                <div className="vp-slim-left">
+                  <span
+                    className="vp-status-dot"
+                    style={{
+                      backgroundColor: meta.statusColor,
+                      boxShadow: `0 0 8px ${meta.statusColor}`
+                    }}
+                  />
+                  <span className="vp-slim-codename">{meta.badgeNumber}</span>
+                  <span className="vp-slim-sep">·</span>
+                  <span className="vp-slim-title">{meta.title}</span>
+                </div>
+
+                <div className="vp-slim-right">
+                  <span
+                    className="vp-slim-pill"
+                    style={{ color: meta.statusColor, borderColor: `${meta.statusColor}44` }}
+                  >
+                    {invariantStr}
+                  </span>
+                  <span className="vp-slim-pill">{topologyStr}</span>
+                  <span className="vp-slim-pill muted-pill">
+                    <Box size={10} strokeWidth={1.5} />
+                    <span>{glbMeshName.split(' ')[0]}</span>
                   </span>
                 </div>
-                <div className="vp-metric-line">
-                  <span>OPTICS</span>
-                  <span>
-                    <Sparkles size={11} strokeWidth={1.5} style={{ display: 'inline', marginRight: 3 }} />
-                    ACES + Bloom + CA
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="center-hud-bottom-stack">
-            <div className="vp-cad-toolbar primary-user-controls">
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.94 }}
+            <AnimatePresence>
+              {showFormulaOverlay && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                  transition={{ duration: 0.18 }}
+                  className="vp-equation-dock"
+                >
+                  <div className="vp-eq-block">
+                    <span className="vp-eq-label">
+                      PRIMARY GOVERNING OPERATOR // DIFFERENTIAL & QUANTUM LAW
+                    </span>
+                    <div ref={kPrimaryRef} />
+                  </div>
+                  <div className="vp-eq-block" style={{ textAlign: 'right' }}>
+                    <span className="vp-eq-label">
+                      FORMAL REDUCTION // BOUNDARY CONDITION
+                    </span>
+                    <div ref={kSecondaryRef} />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="vp-cad-toolbar unified-single-bar">
+              <button
+                type="button"
                 className="vp-tool-btn zoom-highlight"
                 onClick={onZoomIn}
                 title="Zoom In (+ Key)"
               >
-                <ZoomIn size={13} strokeWidth={1.5} />
-                <span>ZOOM IN +</span>
-              </motion.button>
+                <ZoomIn size={12} strokeWidth={1.5} />
+                <span>+</span>
+              </button>
 
               <span className="zoom-pct-readout" title="Current Optical Zoom Level">
                 {zoomPct}%
               </span>
 
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.94 }}
+              <button
+                type="button"
                 className="vp-tool-btn zoom-highlight"
                 onClick={onZoomOut}
                 title="Zoom Out (- Key)"
               >
-                <ZoomOut size={13} strokeWidth={1.5} />
-                <span>ZOOM OUT −</span>
-              </motion.button>
+                <ZoomOut size={12} strokeWidth={1.5} />
+                <span>−</span>
+              </button>
 
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.94 }}
+              <button
+                type="button"
                 className="vp-tool-btn"
                 onClick={() => onCameraPreset('perspective')}
                 title="Reset Camera View (100%)"
               >
-                <RotateCcw size={12} strokeWidth={1.5} />
-                <span>RESET</span>
-              </motion.button>
+                <RotateCcw size={11} strokeWidth={1.5} />
+              </button>
 
               <span className="vp-tool-sep" />
 
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.95 }}
-                className={`vp-tool-btn ${sideRacksHidden ? 'active' : ''}`}
-                onClick={onToggleSideRacksHidden}
-                title="Hide/Show Left & Right Side Panels (Shortcut: Z)"
-              >
-                {sideRacksHidden ? (
-                  <PanelRightClose size={13} strokeWidth={1.5} />
-                ) : (
-                  <PanelLeftClose size={13} strokeWidth={1.5} />
-                )}
-                <span>{sideRacksHidden ? 'SHOW PANELS' : 'HIDE PANELS'}</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.95 }}
-                className="vp-tool-btn hide-dash-highlight"
-                onClick={onToggleDashboardHidden}
-                title="Hide Entire Dashboard HUD for Pure 3D View (Shortcut: H)"
-              >
-                <EyeOff size={13} strokeWidth={1.5} />
-                <span>HIDE DASHBOARD</span>
-              </motion.button>
-            </div>
-
-            <div className="vp-cad-toolbar">
               {([
                 ['perspective', 'PERSP'],
                 ['top', '+Y'],
@@ -280,63 +376,105 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                 ['right', '+X'],
                 ['closeup', 'MACRO']
               ] as [CameraPresetId, string][]).map(([preset, label]) => (
-                <motion.button
+                <button
+                  type="button"
                   key={preset}
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.95 }}
                   className="vp-tool-btn"
                   onClick={() => onCameraPreset(preset)}
                 >
                   {label}
-                </motion.button>
+                </button>
               ))}
 
               <span className="vp-tool-sep" />
 
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.95 }}
+              <button
+                type="button"
                 className={`vp-tool-btn ${gridVisible ? 'active' : ''}`}
                 onClick={onToggleGrid}
+                title="Toggle Coordinate Floor Grid (G)"
               >
-                <Grid size={13} strokeWidth={1.5} />
+                <Grid size={12} strokeWidth={1.5} />
                 <span>GRID</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.95 }}
+              <button
+                type="button"
                 className={`vp-tool-btn ${autoRotate ? 'active' : ''}`}
                 onClick={onToggleAutoRotate}
+                title="Toggle Orbital Gimbal Rotation (O)"
               >
-                <Compass size={13} strokeWidth={1.5} />
+                <Compass size={12} strokeWidth={1.5} />
                 <span>ORBIT</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.95 }}
+              <button
+                type="button"
+                className={`vp-tool-btn ${showFormulaOverlay ? 'active' : ''}`}
+                onClick={() => setShowFormulaOverlay((v) => !v)}
+                title="Show / Hide Floating LaTeX Formula Overlay"
+              >
+                <Sigma size={12} strokeWidth={1.5} />
+                <span>EQ</span>
+              </button>
+
+              <button
+                type="button"
                 className="vp-tool-btn"
                 onClick={onCaptureFrame}
+                title="Capture PNG Frame"
               >
-                <Camera size={13} strokeWidth={1.5} />
-                <span>SNAP</span>
-              </motion.button>
-            </div>
+                <Camera size={12} strokeWidth={1.5} />
+              </button>
 
-            <div className="vp-equation-dock">
-              <div className="vp-eq-block">
-                <span className="vp-eq-label">
-                  PRIMARY GOVERNING OPERATOR // DIFFERENTIAL & QUANTUM LAW
-                </span>
-                <div ref={kPrimaryRef} />
-              </div>
-              <div className="vp-eq-block" style={{ textAlign: 'right' }}>
-                <span className="vp-eq-label">
-                  FORMAL REDUCTION // BOUNDARY CONDITION
-                </span>
-                <div ref={kSecondaryRef} />
-              </div>
+              <span className="vp-tool-sep" />
+
+              <button
+                type="button"
+                className={`vp-tool-btn ${sideRacksHidden ? 'active' : ''}`}
+                onClick={onToggleSideRacksHidden}
+                title="Hide/Show Left & Right Side Panels (Shortcut: Z)"
+              >
+                {sideRacksHidden ? (
+                  <PanelRightClose size={12} strokeWidth={1.5} />
+                ) : (
+                  <PanelLeftClose size={12} strokeWidth={1.5} />
+                )}
+                <span>{sideRacksHidden ? 'PANELS+' : 'PANELS'}</span>
+              </button>
+
+              <button
+                type="button"
+                className="vp-tool-btn hide-dash-highlight"
+                onClick={onToggleDashboardHidden}
+                title="Hide Entire Dashboard HUD for Pure 3D View (Shortcut: H)"
+              >
+                <EyeOff size={12} strokeWidth={1.5} />
+                <span>PURE 3D</span>
+              </button>
+
+              <button
+                type="button"
+                className="vp-tool-btn"
+                data-mute-toggle="true"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleMute?.();
+                }}
+                title="Mute / Unmute Studio Audio (Shortcut: M)"
+                style={{
+                  color: isMuted ? '#fda4af' : '#6ee7b7',
+                  background: isMuted ? 'rgba(244, 63, 94, 0.15)' : 'rgba(52, 211, 153, 0.12)'
+                }}
+              >
+                {isMuted ? (
+                  <VolumeX size={12} strokeWidth={1.5} color="#f43f5e" />
+                ) : (
+                  <Volume2 size={12} strokeWidth={1.5} color="#34d399" />
+                )}
+                <span>{isMuted ? 'MUTED' : 'MUTE'}</span>
+              </button>
             </div>
           </div>
         </div>
