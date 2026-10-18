@@ -11,7 +11,7 @@ export interface WillowHologramHandles {
 export function createWillowHologramScene(): WillowHologramHandles {
   const group = new THREE.Group();
 
-  const horizonGeo = new THREE.SphereGeometry(1.0, 64, 64);
+  const horizonGeo = new THREE.SphereGeometry(0.92, 64, 64);
   const horizonMat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
@@ -24,7 +24,7 @@ export function createWillowHologramScene(): WillowHologramHandles {
       uniform float uMass;
       void main() {
         vNormal = normalize(normalMatrix * normal);
-        vec3 scaled = position * (0.45 + uMass * 0.55);
+        vec3 scaled = position * (0.62 + uMass * 0.45);
         vec4 mv = modelViewMatrix * vec4(scaled, 1.0);
         vViewPos = -mv.xyz;
         gl_Position = projectionMatrix * mv;
@@ -38,16 +38,16 @@ export function createWillowHologramScene(): WillowHologramHandles {
       void main() {
         vec3 viewDir = normalize(vViewPos);
         float ndotv = max(0.0, dot(normalize(vNormal), viewDir));
-        float photonRing = pow(1.0 - ndotv, 3.6);
-        vec3 rimCol = mix(vec3(0.0, 0.95, 0.75), vec3(1.0, 0.55, 0.1), 0.5 + 0.5 * sin(uTime * 3.0 + uSpin * 5.0));
-        gl_FragColor = vec4(rimCol * photonRing * 3.2, 1.0);
+        float photonRing = pow(1.0 - ndotv, 3.4);
+        vec3 rimCol = mix(vec3(0.06, 0.92, 0.72), vec3(0.22, 0.78, 1.0), 0.5 + 0.5 * sin(uTime * 2.4 + uSpin * 4.0));
+        gl_FragColor = vec4(rimCol * photonRing * 2.6, 0.92);
       }
     `
   });
   group.add(new THREE.Mesh(horizonGeo, horizonMat));
 
-  const diskGeo = new THREE.RingGeometry(0.9, 4.4, 128, 32);
-  diskGeo.rotateX(Math.PI * 0.42);
+  // Replaced flat 2D RingGeometry with a true 3D Volumetric Lense-Thirring Twisted Toroidal Manifold
+  const diskGeo = new THREE.TorusKnotGeometry(1.38, 0.16, 180, 36, 2, 3);
   const diskMat = new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
     transparent: true,
@@ -61,41 +61,44 @@ export function createWillowHologramScene(): WillowHologramHandles {
     },
     vertexShader: `
       varying vec2 vUv;
-      varying float vRadius;
+      varying vec3 vNormal;
+      varying vec3 vViewPos;
+      uniform float uTime;
       uniform float uMass;
+      uniform float uSpin;
       void main() {
         vUv = uv;
-        vec3 p = position;
-        float r = length(p.xz);
-        vRadius = r;
-        float horizonR = 0.45 + uMass * 0.55;
-        p.y -= 0.45 * exp(-max(0.0, r - horizonR) * 1.2);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+        vNormal = normalize(normalMatrix * normal);
+        vec3 p = position * (0.78 + uMass * 0.22);
+        // Relativistic Lense-Thirring 3D frame-dragging harmonic wave
+        float wave = sin(uv.x * 18.8495 + uTime * (1.8 + uSpin * 3.5)) * 0.08 * uSpin;
+        p += normal * wave;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        vViewPos = -mv.xyz;
+        gl_Position = projectionMatrix * mv;
       }
     `,
     fragmentShader: `
       varying vec2 vUv;
-      varying float vRadius;
+      varying vec3 vNormal;
+      varying vec3 vViewPos;
       uniform float uTime;
-      uniform float uMass;
       uniform float uSpin;
       uniform float uFlux;
       void main() {
-        float horizonR = 0.48 + uMass * 0.55;
-        if (vRadius < horizonR) discard;
-        float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
-        float spiral = sin(angle * 6.0 - vRadius * 5.5 + uTime * (2.5 + uSpin * 6.0));
-        float radialFade = exp(-(vRadius - horizonR) * 0.85) * smoothstep(horizonR, horizonR + 0.25, vRadius);
-        vec3 col = mix(vec3(0.05, 0.9, 0.65), vec3(0.0, 0.65, 1.0), 0.5 + 0.5 * spiral);
-        col = mix(col, vec3(1.0, 0.75, 0.25), exp(-(vRadius - horizonR) * 2.4));
-        float alpha = radialFade * (0.45 + 0.35 * spiral) * clamp(uFlux * 0.65, 0.2, 1.4);
-        gl_FragColor = vec4(col * 1.4, alpha);
+        vec3 viewDir = normalize(vViewPos);
+        float fresnel = pow(1.0 - abs(dot(normalize(vNormal), viewDir)), 2.2);
+        float stream = 0.5 + 0.5 * sin(vUv.x * 37.699 - uTime * (2.6 + uSpin * 5.0) + vUv.y * 12.566);
+        vec3 col = mix(vec3(0.06, 0.88, 0.68), vec3(0.22, 0.75, 0.98), stream);
+        col = mix(col, vec3(0.98, 0.76, 0.28), pow(stream, 4.0) * 0.65);
+        float alpha = (0.16 + 0.42 * fresnel) * (0.55 + 0.45 * stream) * clamp(uFlux * 0.65, 0.25, 1.25);
+        gl_FragColor = vec4(col * (1.1 + fresnel * 1.4), alpha);
       }
     `
   });
   group.add(new THREE.Mesh(diskGeo, diskMat));
 
-  const boundaryGeo = new THREE.IcosahedronGeometry(4.35, 2);
+  const boundaryGeo = new THREE.IcosahedronGeometry(2.36, 2);
   const boundaryWire = new THREE.WireframeGeometry(boundaryGeo);
   const latticeMat = new THREE.ShaderMaterial({
     transparent: true,
@@ -117,9 +120,9 @@ export function createWillowHologramScene(): WillowHologramHandles {
       uniform float uTime;
       uniform float uFlux;
       void main() {
-        float pulse = 0.5 + 0.5 * sin(uTime * 3.5 + vPos.x * 1.5 + vPos.y * 1.5);
-        vec3 col = mix(vec3(0.06, 0.72, 0.51), vec3(0.0, 0.95, 1.0), pulse);
-        gl_FragColor = vec4(col, 0.22 * clamp(uFlux, 0.3, 2.0));
+        float pulse = 0.5 + 0.5 * sin(uTime * 3.0 + vPos.x * 1.5 + vPos.y * 1.5);
+        vec3 col = mix(vec3(0.06, 0.72, 0.51), vec3(0.22, 0.88, 0.98), pulse);
+        gl_FragColor = vec4(col, 0.16 * clamp(uFlux, 0.3, 1.8));
       }
     `
   });
@@ -134,13 +137,13 @@ export function createWillowHologramScene(): WillowHologramHandles {
     const theta = 2.399963229728653 * i;
     const dir = new THREE.Vector3(Math.cos(theta) * radius, y, Math.sin(theta) * radius);
 
-    rayPositions[i * 6] = dir.x * 4.35;
-    rayPositions[i * 6 + 1] = dir.y * 4.35;
-    rayPositions[i * 6 + 2] = dir.z * 4.35;
+    rayPositions[i * 6] = dir.x * 2.36;
+    rayPositions[i * 6 + 1] = dir.y * 2.36;
+    rayPositions[i * 6 + 2] = dir.z * 2.36;
 
-    rayPositions[i * 6 + 3] = dir.x * 0.85;
-    rayPositions[i * 6 + 4] = dir.y * 0.85;
-    rayPositions[i * 6 + 5] = dir.z * 0.85;
+    rayPositions[i * 6 + 3] = dir.x * 0.95;
+    rayPositions[i * 6 + 4] = dir.y * 0.95;
+    rayPositions[i * 6 + 5] = dir.z * 0.95;
 
     raySeeds[i * 2] = i / qubitCount;
     raySeeds[i * 2 + 1] = i / qubitCount + 10.0;
@@ -165,7 +168,7 @@ export function createWillowHologramScene(): WillowHologramHandles {
       void main() {
         vec3 p = position;
         if (aRaySeed >= 5.0) {
-          p = normalize(p) * (0.46 + uMass * 0.55);
+          p = normalize(p) * (0.62 + uMass * 0.45);
         }
         vPulse = fract(aRaySeed + uTime * 0.45);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
@@ -175,8 +178,8 @@ export function createWillowHologramScene(): WillowHologramHandles {
       varying float vPulse;
       uniform float uFlux;
       void main() {
-        vec3 col = mix(vec3(0.06, 0.85, 0.55), vec3(0.0, 0.95, 1.0), vPulse);
-        gl_FragColor = vec4(col, 0.26 * clamp(uFlux * 0.7, 0.15, 1.5));
+        vec3 col = mix(vec3(0.06, 0.85, 0.55), vec3(0.22, 0.92, 1.0), vPulse);
+        gl_FragColor = vec4(col, 0.22 * clamp(uFlux * 0.65, 0.15, 1.35));
       }
     `
   });
