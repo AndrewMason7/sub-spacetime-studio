@@ -1,0 +1,29 @@
+{
+  "name": "sub-spacetime-studio",
+  "version": "1.0.0",
+  "description": "Sub-Spacetime & Hilbert Hologram Studio — Interactive 60FPS WebGL2/GLSL Quantum Gravity & Lean 4 Verification Command Center built with Gemini 4 Argon",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5188",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 5188"
+  },
+  "dependencies": {
+    "framer-motion": "^14.3.0",
+    "katex": "^0.16.11",
+    "lucide-react": "^1.59.0",
+    "postprocessing": "^6.39.5",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "shiki": "^4.5.0",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.170.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}
