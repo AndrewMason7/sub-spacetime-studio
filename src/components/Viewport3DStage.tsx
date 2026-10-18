@@ -56,6 +56,7 @@ interface Viewport3DStageProps {
   onStopDirectorTour?: () => void;
   isMuted?: boolean;
   onToggleMute?: () => void;
+  isMobile?: boolean;
 }
 
 const TOUR_ACT_LABELS = [
@@ -92,7 +93,8 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
   onJumpToTourAct,
   onStopDirectorTour,
   isMuted = false,
-  onToggleMute
+  onToggleMute,
+  isMobile = false
 }) => {
   const [showFormulaOverlay, setShowFormulaOverlay] = useState(false);
   const kPrimaryRef = useRef<HTMLDivElement>(null);
@@ -124,7 +126,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
       {/* FULL-BLEED 100VW × 100VH WEBGL2 CANVAS */}
       <div id="canvas-viewport" ref={viewportRef} />
 
-      {dashboardHidden ? (
+      {!isMobile && dashboardHidden ? (
         <div className="pure-3d-floating-dock">
           <motion.button
             whileHover={{ scale: 1.04 }}
@@ -226,18 +228,20 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                     <span>DIRECTOR&apos;S CUT · 360° ∞ LOOP</span>
                   </div>
 
-                  <div className="director-act-pills">
-                    {TOUR_ACT_LABELS.map((label, idx) => (
-                      <button
-                        key={label}
-                        className={`director-act-btn ${tourActIndex === idx ? 'active' : ''}`}
-                        onClick={() => onJumpToTourAct?.(idx)}
-                        title={`Jump to ${label}`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                  {!isMobile && (
+                    <div className="director-act-pills">
+                      {TOUR_ACT_LABELS.map((label, idx) => (
+                        <button
+                          key={label}
+                          className={`director-act-btn ${tourActIndex === idx ? 'active' : ''}`}
+                          onClick={() => onJumpToTourAct?.(idx)}
+                          title={`Jump to ${label}`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   <span
                     style={{
@@ -297,19 +301,21 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                   <span className="vp-slim-title">{meta.title}</span>
                 </div>
 
-                <div className="vp-slim-right">
-                  <span
-                    className="vp-slim-pill"
-                    style={{ color: meta.statusColor, borderColor: `${meta.statusColor}44` }}
-                  >
-                    {invariantStr}
-                  </span>
-                  <span className="vp-slim-pill">{topologyStr}</span>
-                  <span className="vp-slim-pill muted-pill">
-                    <Box size={10} strokeWidth={1.5} />
-                    <span>{glbMeshName.split(' ')[0]}</span>
-                  </span>
-                </div>
+                {!isMobile && (
+                  <div className="vp-slim-right">
+                    <span
+                      className="vp-slim-pill"
+                      style={{ color: meta.statusColor, borderColor: `${meta.statusColor}44` }}
+                    >
+                      {invariantStr}
+                    </span>
+                    <span className="vp-slim-pill">{topologyStr}</span>
+                    <span className="vp-slim-pill muted-pill">
+                      <Box size={10} strokeWidth={1.5} />
+                      <span>{glbMeshName.split(' ')[0]}</span>
+                    </span>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -344,149 +350,151 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
               )}
             </AnimatePresence>
 
-            <div className="vp-cad-toolbar unified-single-bar">
-              <button
-                type="button"
-                className="vp-tool-btn zoom-highlight"
-                onClick={onZoomIn}
-                title="Zoom In (+ Key)"
-              >
-                <ZoomIn size={12} strokeWidth={1.5} />
-                <span>+</span>
-              </button>
-
-              <span className="zoom-pct-readout" title="Current Optical Zoom Level">
-                {zoomPct}%
-              </span>
-
-              <button
-                type="button"
-                className="vp-tool-btn zoom-highlight"
-                onClick={onZoomOut}
-                title="Zoom Out (- Key)"
-              >
-                <ZoomOut size={12} strokeWidth={1.5} />
-                <span>−</span>
-              </button>
-
-              <button
-                type="button"
-                className="vp-tool-btn"
-                onClick={() => onCameraPreset('perspective')}
-                title="Reset Camera View (100%)"
-              >
-                <RotateCcw size={11} strokeWidth={1.5} />
-              </button>
-
-              <span className="vp-tool-sep" />
-
-              {([
-                ['perspective', 'PERSP'],
-                ['top', '+Y'],
-                ['front', '+Z'],
-                ['right', '+X'],
-                ['closeup', 'MACRO']
-              ] as [CameraPresetId, string][]).map(([preset, label]) => (
+            {!isMobile && (
+              <div className="vp-cad-toolbar unified-single-bar">
                 <button
                   type="button"
-                  key={preset}
-                  className={`vp-tool-btn ${activeCameraPreset === preset ? 'active' : ''}`}
-                  onClick={() => onCameraPreset(preset)}
+                  className="vp-tool-btn zoom-highlight"
+                  onClick={onZoomIn}
+                  title="Zoom In (+ Key)"
                 >
-                  {label}
+                  <ZoomIn size={12} strokeWidth={1.5} />
+                  <span>+</span>
                 </button>
-              ))}
 
-              <span className="vp-tool-sep" />
+                <span className="zoom-pct-readout" title="Current Optical Zoom Level">
+                  {zoomPct}%
+                </span>
 
-              <button
-                type="button"
-                className={`vp-tool-btn ${gridVisible ? 'active' : ''}`}
-                onClick={onToggleGrid}
-                title="Toggle Coordinate Floor Grid (G)"
-              >
-                <Grid size={12} strokeWidth={1.5} />
-                <span className="vp-btn-label">GRID</span>
-              </button>
+                <button
+                  type="button"
+                  className="vp-tool-btn zoom-highlight"
+                  onClick={onZoomOut}
+                  title="Zoom Out (- Key)"
+                >
+                  <ZoomOut size={12} strokeWidth={1.5} />
+                  <span>−</span>
+                </button>
 
-              <button
-                type="button"
-                className={`vp-tool-btn ${autoRotate ? 'active' : ''}`}
-                onClick={onToggleAutoRotate}
-                title="Toggle Orbital Gimbal Rotation (O)"
-              >
-                <Compass size={12} strokeWidth={1.5} />
-                <span className="vp-btn-label">ORBIT</span>
-              </button>
+                <button
+                  type="button"
+                  className="vp-tool-btn"
+                  onClick={() => onCameraPreset('perspective')}
+                  title="Reset Camera View (100%)"
+                >
+                  <RotateCcw size={11} strokeWidth={1.5} />
+                </button>
 
-              <button
-                type="button"
-                className={`vp-tool-btn ${showFormulaOverlay ? 'active' : ''}`}
-                onClick={() => setShowFormulaOverlay((v) => !v)}
-                title="Show / Hide Floating LaTeX Formula Overlay"
-              >
-                <Sigma size={12} strokeWidth={1.5} />
-                <span className="vp-btn-label">EQ</span>
-              </button>
+                <span className="vp-tool-sep" />
 
-              <button
-                type="button"
-                className="vp-tool-btn"
-                onClick={onCaptureFrame}
-                title="Capture PNG Frame (⌘P)"
-              >
-                <Camera size={12} strokeWidth={1.5} />
-              </button>
+                {([
+                  ['perspective', 'PERSP'],
+                  ['top', '+Y'],
+                  ['front', '+Z'],
+                  ['right', '+X'],
+                  ['closeup', 'MACRO']
+                ] as [CameraPresetId, string][]).map(([preset, label]) => (
+                  <button
+                    type="button"
+                    key={preset}
+                    className={`vp-tool-btn ${activeCameraPreset === preset ? 'active' : ''}`}
+                    onClick={() => onCameraPreset(preset)}
+                  >
+                    {label}
+                  </button>
+                ))}
 
-              <span className="vp-tool-sep" />
+                <span className="vp-tool-sep" />
 
-              <button
-                type="button"
-                className={`vp-tool-btn ${sideRacksHidden ? 'active' : ''}`}
-                onClick={onToggleSideRacksHidden}
-                title="Hide/Show Left & Right Side Panels (Shortcut: Z)"
-              >
-                {sideRacksHidden ? (
-                  <PanelRightClose size={12} strokeWidth={1.5} />
-                ) : (
-                  <PanelLeftClose size={12} strokeWidth={1.5} />
-                )}
-                <span className="vp-btn-label">{sideRacksHidden ? 'PANELS+' : 'PANELS'}</span>
-              </button>
+                <button
+                  type="button"
+                  className={`vp-tool-btn ${gridVisible ? 'active' : ''}`}
+                  onClick={onToggleGrid}
+                  title="Toggle Coordinate Floor Grid (G)"
+                >
+                  <Grid size={12} strokeWidth={1.5} />
+                  <span className="vp-btn-label">GRID</span>
+                </button>
 
-              <button
-                type="button"
-                className="vp-tool-btn hide-dash-highlight"
-                onClick={onToggleDashboardHidden}
-                title="Hide Entire Dashboard HUD for Pure 3D View (Shortcut: H)"
-              >
-                <EyeOff size={12} strokeWidth={1.5} />
-                <span className="vp-btn-label">PURE 3D</span>
-              </button>
+                <button
+                  type="button"
+                  className={`vp-tool-btn ${autoRotate ? 'active' : ''}`}
+                  onClick={onToggleAutoRotate}
+                  title="Toggle Orbital Gimbal Rotation (O)"
+                >
+                  <Compass size={12} strokeWidth={1.5} />
+                  <span className="vp-btn-label">ORBIT</span>
+                </button>
 
-              <button
-                type="button"
-                className="vp-tool-btn"
-                data-mute-toggle="true"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onToggleMute?.();
-                }}
-                title="Mute / Unmute Studio Audio (Shortcut: M)"
-                style={{
-                  color: isMuted ? '#fda4af' : '#6ee7b7',
-                  background: isMuted ? 'rgba(244, 63, 94, 0.15)' : 'rgba(52, 211, 153, 0.12)'
-                }}
-              >
-                {isMuted ? (
-                  <VolumeX size={12} strokeWidth={1.5} color="#f43f5e" />
-                ) : (
-                  <Volume2 size={12} strokeWidth={1.5} color="#34d399" />
-                )}
-                <span className="vp-btn-label">{isMuted ? 'MUTED' : 'MUTE'}</span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  className={`vp-tool-btn ${showFormulaOverlay ? 'active' : ''}`}
+                  onClick={() => setShowFormulaOverlay((v) => !v)}
+                  title="Show / Hide Floating LaTeX Formula Overlay"
+                >
+                  <Sigma size={12} strokeWidth={1.5} />
+                  <span className="vp-btn-label">EQ</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="vp-tool-btn"
+                  onClick={onCaptureFrame}
+                  title="Capture PNG Frame (⌘P)"
+                >
+                  <Camera size={12} strokeWidth={1.5} />
+                </button>
+
+                <span className="vp-tool-sep" />
+
+                <button
+                  type="button"
+                  className={`vp-tool-btn ${sideRacksHidden ? 'active' : ''}`}
+                  onClick={onToggleSideRacksHidden}
+                  title="Hide/Show Left & Right Side Panels (Shortcut: Z)"
+                >
+                  {sideRacksHidden ? (
+                    <PanelRightClose size={12} strokeWidth={1.5} />
+                  ) : (
+                    <PanelLeftClose size={12} strokeWidth={1.5} />
+                  )}
+                  <span className="vp-btn-label">{sideRacksHidden ? 'PANELS+' : 'PANELS'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="vp-tool-btn hide-dash-highlight"
+                  onClick={onToggleDashboardHidden}
+                  title="Hide Entire Dashboard HUD for Pure 3D View (Shortcut: H)"
+                >
+                  <EyeOff size={12} strokeWidth={1.5} />
+                  <span className="vp-btn-label">PURE 3D</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="vp-tool-btn"
+                  data-mute-toggle="true"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onToggleMute?.();
+                  }}
+                  title="Mute / Unmute Studio Audio (Shortcut: M)"
+                  style={{
+                    color: isMuted ? '#fda4af' : '#6ee7b7',
+                    background: isMuted ? 'rgba(244, 63, 94, 0.15)' : 'rgba(52, 211, 153, 0.12)'
+                  }}
+                >
+                  {isMuted ? (
+                    <VolumeX size={12} strokeWidth={1.5} color="#f43f5e" />
+                  ) : (
+                    <Volume2 size={12} strokeWidth={1.5} color="#34d399" />
+                  )}
+                  <span className="vp-btn-label">{isMuted ? 'MUTED' : 'MUTE'}</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

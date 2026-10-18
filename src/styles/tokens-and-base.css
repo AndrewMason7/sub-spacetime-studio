@@ -130,15 +130,6 @@ body {
 }
 
 @media (max-width: 1024px) {
-  .left-instrument-rack {
-    width: 260px;
-  }
-  .right-lean-workspace {
-    width: 320px;
-  }
-}
-
-@media (max-width: 768px) {
   .left-instrument-rack,
   .right-lean-workspace {
     display: none !important;

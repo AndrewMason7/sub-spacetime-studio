@@ -1,19 +1,83 @@
 /**
- * DOMAIN 7: MOBILE RESPONSIVE TACTIC (@media (max-width: 768px))
+ * DOMAIN 7: MOBILE RESPONSIVE TACTIC
+ * Applies to:
+ * - .is-mobile-device (active on all iOS, iPhone, Android, touch devices)
+ * - @media (max-width: 1024px)
+ * - @media (hover: none) and (pointer: coarse)
+ *
  * Automatically hides complex avionics racks (Left Parameter Rack & Right Lean IDE),
  * gives 100% full screen to the 3D quantum spacetime canvas,
  * mounts the top subtle advisory badge: "Desktop Recommended for Full Avionics Workstation",
  * and provides a tactile floating "Tour" button with quick module pills & audio toggle.
  */
 
-/* Hidden by default on desktop (> 768px) */
+/* Hidden by default on standard desktop with mouse */
 .mobile-desktop-notice-badge,
 .mobile-floating-action-dock {
   display: none;
 }
 
-@media (max-width: 768px) {
-  /* 1. HIDE ALL COMPLEX DESKTOP PANELS & HEAVY DOCKS */
+/* 1. APPLIES WHEN .is-mobile-device IS PRESENT ON CONTAINER */
+.is-mobile-device .left-instrument-rack,
+.is-mobile-device .right-lean-workspace,
+.is-mobile-device .ws-timeline-statusbar,
+.is-mobile-device .floating-command-deck,
+.is-mobile-device .vp-cad-toolbar {
+  display: none !important;
+}
+
+.is-mobile-device .center-stage-hud {
+  left: 10px !important;
+  right: 10px !important;
+  top: 44px !important;
+  bottom: 84px !important;
+  pointer-events: none;
+}
+
+.is-mobile-device .vp-slim-top-strip {
+  margin-top: 26px;
+  height: 28px;
+  padding: 0 10px;
+  background: rgba(8, 12, 20, 0.72);
+}
+
+.is-mobile-device .vp-slim-right {
+  display: none !important;
+}
+
+.is-mobile-device .vp-slim-title {
+  font-size: 8.5px;
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.is-mobile-device .director-cut-hud-banner {
+  margin-top: 26px;
+  padding: 6px 10px;
+  gap: 4px;
+}
+
+.is-mobile-device .director-act-pills {
+  display: none !important;
+}
+
+.is-mobile-device .director-narration-line {
+  font-size: 9px;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.is-mobile-device .mobile-desktop-notice-badge {
+  display: inline-flex !important;
+}
+
+.is-mobile-device .mobile-floating-action-dock {
+  display: flex !important;
+}
+
+/* 2. MEDIA QUERIES FOR NARROW AND TOUCH VIEWPORTS (UP TO 1024px & TOUCH) */
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   .left-instrument-rack,
   .right-lean-workspace,
   .ws-timeline-statusbar,
@@ -22,7 +86,6 @@
     display: none !important;
   }
 
-  /* 2. RE-ALIGN CENTER HUD TO OCCUPY CLEAN MOBILE VIEWPORT */
   .center-stage-hud {
     left: 10px !important;
     right: 10px !important;
@@ -65,173 +128,181 @@
     line-height: 1.25;
   }
 
-  /* 3. TOP SUBTLE BADGE: "Desktop Recommended for Full Avionics Workstation" */
   .mobile-desktop-notice-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 60;
-    padding: 4px 12px;
-    border-radius: 999px;
-    background: rgba(7, 11, 20, 0.85);
-    backdrop-filter: blur(20px) saturate(150%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.14),
-      0 0 0 1px rgba(125, 211, 252, 0.22),
-      0 8px 24px rgba(0, 0, 0, 0.75);
-    color: #94a3b8;
-    font-family: var(--font-mono);
-    font-size: 8.5px;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-    pointer-events: auto;
-    max-width: calc(100vw - 20px);
-    text-align: center;
+    display: inline-flex !important;
   }
 
-  .mobile-badge-icon {
-    color: var(--accent-ice);
-    flex-shrink: 0;
-  }
-
-  .mobile-desktop-notice-badge span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* 4. FLOATING ACTION DOCK WITH HERO "TOUR" BUTTON */
   .mobile-floating-action-dock {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    position: fixed;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 60;
-    padding: 5px 8px;
-    border-radius: 999px;
-    background: rgba(8, 12, 22, 0.88);
-    backdrop-filter: blur(26px) saturate(160%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.18),
-      0 0 0 1px rgba(125, 211, 252, 0.28),
-      0 16px 40px rgba(0, 0, 0, 0.85);
-    pointer-events: auto;
-    max-width: calc(100vw - 24px);
+    display: flex !important;
   }
+}
 
-  .mobile-manifold-pills {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-  }
+/* 3. MOBILE DESKTOP ADVISORY BADGE STYLING */
+.mobile-desktop-notice-badge {
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(7, 11, 20, 0.88);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0 0 1px rgba(125, 211, 252, 0.28),
+    0 8px 24px rgba(0, 0, 0, 0.75);
+  color: #94a3b8;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: auto;
+  max-width: calc(100vw - 20px);
+  text-align: center;
+}
 
-  .mobile-mode-pill {
-    background: transparent;
-    border: none;
-    border-radius: 999px;
-    height: 28px;
-    padding: 0 7px;
-    font-family: var(--font-mono);
-    font-size: 8.5px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-  }
+.mobile-badge-icon {
+  color: var(--accent-ice);
+  flex-shrink: 0;
+}
 
-  .mobile-mode-pill.active {
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: inset 0 0 0 1px var(--pill-accent, var(--accent-ice));
-    color: #ffffff;
-    font-weight: 700;
-  }
+.mobile-desktop-notice-badge span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-  .mobile-pill-dot {
-    width: 4.5px;
-    height: 4.5px;
-    border-radius: 50%;
-  }
+/* 4. FLOATING ACTION DOCK WITH HERO "TOUR" BUTTON */
+.mobile-floating-action-dock {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(8, 12, 22, 0.9);
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0 0 1px rgba(125, 211, 252, 0.3),
+    0 16px 40px rgba(0, 0, 0, 0.85);
+  pointer-events: auto;
+  max-width: calc(100vw - 24px);
+}
 
-  /* HERO FLOATING TOUR BUTTON */
-  .mobile-floating-tour-btn {
-    height: 32px;
-    padding: 0 13px;
-    border: none;
-    border-radius: 999px;
-    background: linear-gradient(135deg, rgba(125, 211, 252, 0.28) 0%, rgba(56, 189, 248, 0.14) 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.25),
-      0 0 0 1px rgba(125, 211, 252, 0.55),
-      0 4px 14px rgba(56, 189, 248, 0.35);
-    color: #f0f9ff;
-    font-family: var(--font-mono);
-    font-size: 9.5px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-    position: relative;
-    overflow: hidden;
-  }
+.mobile-manifold-pills {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
 
-  .mobile-floating-tour-btn.running {
-    background: linear-gradient(135deg, rgba(244, 63, 94, 0.35) 0%, rgba(244, 63, 94, 0.18) 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.25),
-      0 0 0 1px rgba(244, 63, 94, 0.65),
-      0 4px 14px rgba(244, 63, 94, 0.4);
-    color: #ffe4e6;
-  }
+.mobile-mode-pill {
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  height: 28px;
+  padding: 0 7px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
 
-  .mobile-tour-pulse {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent-ice);
-    box-shadow: 0 0 8px var(--accent-ice);
-    display: inline-block;
-  }
+.mobile-mode-pill.active {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px var(--pill-accent, var(--accent-ice));
+  color: #ffffff;
+  font-weight: 700;
+}
 
-  .mobile-tour-pulse.active {
-    background: var(--accent-crimson);
-    box-shadow: 0 0 8px var(--accent-crimson);
-    animation: mobilePulse 1.2s infinite ease-in-out;
-  }
+.mobile-pill-dot {
+  width: 4.5px;
+  height: 4.5px;
+  border-radius: 50%;
+}
 
-  @keyframes mobilePulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(1.3); }
-  }
+/* HERO FLOATING TOUR BUTTON */
+.mobile-floating-tour-btn {
+  height: 32px;
+  padding: 0 13px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(125, 211, 252, 0.28) 0%, rgba(56, 189, 248, 0.14) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 0 0 1px rgba(125, 211, 252, 0.55),
+    0 4px 14px rgba(56, 189, 248, 0.35);
+  color: #f0f9ff;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
 
-  .mobile-quick-audio-btn {
-    height: 28px;
-    width: 28px;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.06);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
+.mobile-floating-tour-btn.running {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.35) 0%, rgba(244, 63, 94, 0.18) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 0 0 1px rgba(244, 63, 94, 0.65),
+    0 4px 14px rgba(244, 63, 94, 0.4);
+  color: #ffe4e6;
+}
 
-  /* Canvas touch action optimize for smooth one/two finger gestures */
-  #canvas-viewport {
-    touch-action: none !important;
-  }
+.mobile-tour-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-ice);
+  box-shadow: 0 0 8px var(--accent-ice);
+  display: inline-block;
+}
+
+.mobile-tour-pulse.active {
+  background: var(--accent-crimson);
+  box-shadow: 0 0 8px var(--accent-crimson);
+  animation: mobilePulse 1.2s infinite ease-in-out;
+}
+
+@keyframes mobilePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.3); }
+}
+
+.mobile-quick-audio-btn {
+  height: 28px;
+  width: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Canvas touch action optimize for smooth one/two finger gestures */
+#canvas-viewport {
+  touch-action: none !important;
 }

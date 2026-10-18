@@ -374,3 +374,15 @@
   border-radius: 999px;
   transition: width 0.08s linear;
 }
+
+@media (max-width: 1024px) {
+  .center-stage-hud {
+    left: 10px !important;
+    right: 10px !important;
+    top: 44px !important;
+    bottom: 84px !important;
+  }
+  .vp-cad-toolbar {
+    display: none !important;
+  }
+}

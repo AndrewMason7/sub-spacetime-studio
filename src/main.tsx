@@ -38,12 +38,23 @@ const DEFAULT_UNIFORMS: SimulationUniformState = {
 
 const SINGLETON_AUDIO = AudioSynthesizer.getInstance();
 
+const checkMobileEnv = () => {
+  if (typeof window === 'undefined') return false;
+  const isMobileUA = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const isNarrow = window.innerWidth <= 1024;
+  return isMobileUA || (isTouch && isNarrow) || window.innerWidth <= 768;
+};
+
 const WorkstationApp: React.FC = () => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<QuantumSpacetimeEngine | null>(null);
   const audioRef = useRef<AudioSynthesizer>(SINGLETON_AUDIO);
   const animTokenMapRef = useRef<Record<string, number>>({});
 
+  const [isMobile, setIsMobile] = useState(checkMobileEnv);
   const [activeMode, setActiveMode] = useState<SceneModeId>('observer');
   const [uniforms, setUniforms] = useState<SimulationUniformState>(DEFAULT_UNIFORMS);
   const [openFileIds, setOpenFileIds] = useState<string[]>([
@@ -66,6 +77,18 @@ const WorkstationApp: React.FC = () => {
   const [highlightedSliderIdx, setHighlightedSliderIdx] = useState<number | null>(null);
   const [fps, setFps] = useState(60.0);
   const [cmdOpen, setCmdOpen] = useState(false);
+
+  useEffect(() => {
+    const handleDeviceResize = () => {
+      setIsMobile(checkMobileEnv());
+    };
+    window.addEventListener('resize', handleDeviceResize);
+    window.addEventListener('orientationchange', handleDeviceResize);
+    return () => {
+      window.removeEventListener('resize', handleDeviceResize);
+      window.removeEventListener('orientationchange', handleDeviceResize);
+    };
+  }, []);
 
   useEffect(() => {
     if (!viewportRef.current) return;
@@ -394,8 +417,10 @@ const WorkstationApp: React.FC = () => {
   return (
     <div
       className={`spatial-instrument-shell ${
-        sideRacksHidden ? 'zen-theater-active' : ''
-      } ${dashboardHidden ? 'pure-3d-active' : ''}`}
+        isMobile ? 'is-mobile-device' : ''
+      } ${sideRacksHidden ? 'zen-theater-active' : ''} ${
+        dashboardHidden ? 'pure-3d-active' : ''
+      }`}
     >
       <Viewport3DStage
         viewportRef={viewportRef}
@@ -425,6 +450,7 @@ const WorkstationApp: React.FC = () => {
         onStopDirectorTour={stopDirectorTour}
         isMuted={isMuted}
         onToggleMute={handleToggleMute}
+        isMobile={isMobile}
       />
 
       {/* MOBILE-ONLY TOP DESKTOP ADVISORY BADGE */}
@@ -498,7 +524,7 @@ const WorkstationApp: React.FC = () => {
         </button>
       </div>
 
-      {!dashboardHidden && (
+      {!isMobile && !dashboardHidden && (
         <TopMenuBar
           activeMode={activeMode}
           onSelectMode={handleUserSelectMode}
@@ -522,7 +548,7 @@ const WorkstationApp: React.FC = () => {
         />
       )}
 
-      {!dashboardHidden && !sideRacksHidden && (
+      {!isMobile && !dashboardHidden && !sideRacksHidden && (
         <LeftParameterDock
           activeMode={activeMode}
           meta={meta}
@@ -537,7 +563,7 @@ const WorkstationApp: React.FC = () => {
         />
       )}
 
-      {!dashboardHidden && !sideRacksHidden && (
+      {!isMobile && !dashboardHidden && !sideRacksHidden && (
         <RightLeanIDE
           meta={meta}
           uniforms={uniforms}
@@ -550,7 +576,7 @@ const WorkstationApp: React.FC = () => {
         />
       )}
 
-      {!dashboardHidden && (
+      {!isMobile && !dashboardHidden && (
         <BottomTimelineDock
           activeMode={activeMode}
           meta={meta}
