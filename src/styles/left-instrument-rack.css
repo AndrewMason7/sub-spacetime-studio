@@ -1,19 +1,46 @@
 /**
  * DOMAIN 3: LEFT HARDWARE INSTRUMENT RACK, DAW FADERS & CRT SCOPE (LeftParameterDock.tsx)
+ * Color-Coded Functional Zones:
+ * - Zone 1 (DAW Faders): Multi-channel Cyan / Amber-Gold / Violet faders
+ * - Zone 2 (CRT Scope): Tektronix Emerald Radar Green (#02130b / #10b981)
+ * - Zone 3 (Lean Repo Vault): Deep Indigo-Violet (#130d26 / #c084fc)
  */
 .left-instrument-rack {
   left: 12px;
   width: 286px;
   overflow-y: auto;
+  border: 1px solid rgba(125, 211, 252, 0.14);
+}
+
+.zone-header-faders {
+  background: linear-gradient(90deg, rgba(14, 28, 48, 0.92) 0%, rgba(12, 18, 32, 0.85) 100%);
+}
+
+.zone-header-scope {
+  background: linear-gradient(90deg, rgba(4, 38, 24, 0.92) 0%, rgba(6, 22, 16, 0.88) 100%);
+  border-left: 3px solid #10b981;
+  border-top: 1px solid rgba(16, 185, 129, 0.22);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.18);
+}
+
+.scope-zone-body {
+  background: rgba(2, 16, 10, 0.55);
+}
+
+.zone-header-repo {
+  background: linear-gradient(90deg, rgba(34, 16, 58, 0.92) 0%, rgba(16, 12, 32, 0.88) 100%);
+  border-left: 3px solid #c084fc;
+  border-top: 1px solid rgba(192, 132, 252, 0.24);
+  border-bottom: 1px solid rgba(192, 132, 252, 0.18);
 }
 
 .rack-module-tag {
   font-size: 8px;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   white-space: nowrap;
+  font-weight: 700;
 }
 
 .rack-mode-pills {
@@ -30,7 +57,7 @@
   font-family: var(--font-mono);
   font-size: 8.5px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -39,31 +66,28 @@
 
 .rack-mode-pill:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .rack-mode-pill.active {
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: rgba(56, 189, 248, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.32);
   color: #ffffff;
 }
 
 .daw-fader-module {
   margin-bottom: 8px;
-  padding: 6px 9px;
+  padding: 7px 9px;
   border-radius: 7px;
-  background: rgba(4, 7, 14, 0.56);
+  background: linear-gradient(180deg, rgba(10, 16, 29, 0.78) 0%, rgba(5, 9, 18, 0.86) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 0 0 1px rgba(255, 255, 255, 0.04);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
   transition: box-shadow 0.15s, background 0.15s;
 }
 
 .daw-fader-module.hovered {
-  background: rgba(8, 13, 24, 0.78);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 0 1px rgba(125, 211, 252, 0.25);
+  background: linear-gradient(180deg, rgba(15, 24, 42, 0.92) 0%, rgba(8, 14, 26, 0.95) 100%);
 }
 
 .daw-fader-header {
@@ -77,7 +101,7 @@
 .daw-fader-label {
   font-size: 10px;
   font-weight: 600;
-  color: #f1f5f9;
+  color: #f8fafc;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -94,7 +118,7 @@
   font-size: 9px;
   color: #cbd5e1;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: 4px;
   background: rgba(255, 255, 255, 0.04);
 }
 
@@ -107,8 +131,8 @@
   font-size: 10px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  background: rgba(2, 4, 9, 0.85);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.07);
+  background: rgba(2, 4, 9, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 4px;
   padding: 1px 6px;
   white-space: nowrap;
@@ -121,7 +145,7 @@
   background: #020408;
   box-shadow:
     inset 0 2px 5px rgba(0, 0, 0, 0.95),
-    0 0 0 1px rgba(255, 255, 255, 0.07);
+    0 0 0 1px rgba(255, 255, 255, 0.09);
   display: flex;
   align-items: center;
 }
@@ -134,8 +158,8 @@
   height: 3px;
   background-image: repeating-linear-gradient(
     90deg,
-    rgba(148, 163, 184, 0.35) 0px,
-    rgba(148, 163, 184, 0.35) 1px,
+    rgba(148, 163, 184, 0.38) 0px,
+    rgba(148, 163, 184, 0.38) 1px,
     transparent 1px,
     transparent 6px
   );
@@ -216,28 +240,28 @@
   justify-content: space-between;
   font-family: var(--font-mono);
   font-size: 8px;
-  color: var(--text-muted);
+  color: #64748b;
   margin-top: 2px;
 }
 
 .scrubber-caption {
-  margin-top: 2px;
+  margin-top: 3px;
   font-size: 9px;
-  line-height: 1.28;
-  color: var(--text-secondary);
+  line-height: 1.3;
+  color: #94a3b8;
 }
 
 .ws-trigger-btn {
   width: 100%;
-  height: 27px;
+  height: 28px;
   border: none;
   border-radius: 6px;
-  background: linear-gradient(180deg, rgba(125, 211, 252, 0.16) 0%, rgba(125, 211, 252, 0.05) 100%);
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.22) 0%, rgba(168, 85, 247, 0.16) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 0 0 1px rgba(125, 211, 252, 0.36),
-    0 4px 12px rgba(0, 0, 0, 0.45);
-  color: var(--accent-ice);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0 1px rgba(56, 189, 248, 0.45),
+    0 4px 12px rgba(0, 0, 0, 0.5);
+  color: #e0f2fe;
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 700;
@@ -251,22 +275,23 @@
 }
 
 .ws-trigger-btn.crimson {
-  background: linear-gradient(180deg, rgba(244, 63, 94, 0.24) 0%, rgba(244, 63, 94, 0.08) 100%);
+  background: linear-gradient(90deg, rgba(244, 63, 94, 0.28) 0%, rgba(217, 119, 6, 0.18) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 0 0 1px rgba(244, 63, 94, 0.5),
-    0 4px 14px rgba(0, 0, 0, 0.5);
-  color: #fda4af;
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0 1px rgba(244, 63, 94, 0.55),
+    0 4px 14px rgba(0, 0, 0, 0.55);
+  color: #ffe4e6;
 }
 
 .oscilloscope-crt-bezel {
   position: relative;
   height: 60px;
   border-radius: 6px;
-  background: #020408;
+  background: #02130b;
   box-shadow:
-    inset 0 2px 8px rgba(0, 0, 0, 0.95),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+    inset 0 2px 10px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(16, 185, 129, 0.35),
+    0 0 16px rgba(16, 185, 129, 0.1);
   overflow: hidden;
 }
 
@@ -298,21 +323,21 @@
   justify-content: space-between;
   font-family: var(--font-mono);
   font-size: 8px;
-  color: rgba(148, 163, 184, 0.65);
+  font-weight: 600;
   pointer-events: none;
 }
 
 .ws-explorer-tree {
-  padding: 2px 0;
-  background: rgba(2, 4, 8, 0.45);
+  padding: 3px 0;
+  background: rgba(12, 8, 24, 0.62);
 }
 
 .ws-tree-item {
   width: 100%;
-  padding: 4px 10px;
+  padding: 5px 10px;
   background: transparent;
   border: none;
-  border-left: 2px solid transparent;
+  border-left: 3px solid transparent;
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: 9.5px;
@@ -324,14 +349,12 @@
 }
 
 .ws-tree-item:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(192, 132, 252, 0.08);
   color: var(--text-primary);
 }
 
 .ws-tree-item.selected {
-  background: rgba(125, 211, 252, 0.09);
-  border-left-color: var(--accent-ice);
-  color: #ffffff;
+  font-weight: 600;
 }
 
 .ws-tree-filename {
@@ -343,7 +366,7 @@
 
 .ws-tree-loc {
   font-size: 8.5px;
-  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .ws-spec-prose {

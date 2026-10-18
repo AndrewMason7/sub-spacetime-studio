@@ -53,14 +53,50 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
   const sweepXRef = useRef<number>(0);
   const prevYRef = useRef<number>(30);
 
+  const getChannelAccent = (sliderIdx: number): string => {
+    if (sliderIdx === 0) return meta.statusColor;
+    if (sliderIdx === 1) return '#fbbf24';
+    return activeMode === 'fkcrt' || activeMode === 'retraction' ? '#38bdf8' : '#c084fc';
+  };
+
   useEffect(() => {
     let animId = 0;
     const canvas = scopeCanvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.fillStyle = '#020408';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.fillStyle = '#02130b';
+        ctx.fillRect(0, 0, w, h);
+
+        const { traceColor } = computeOscilloscopeSample(
+          activeMode,
+          uniforms,
+          0,
+          '#10b981'
+        );
+        ctx.save();
+        ctx.strokeStyle = traceColor;
+        ctx.shadowColor = traceColor;
+        ctx.shadowBlur = 6;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for (let x = 0; x < w; x += 2) {
+          const { sample } = computeOscilloscopeSample(
+            activeMode,
+            uniforms,
+            x * 0.045,
+            '#10b981'
+          );
+          const y = Math.max(5, Math.min(h - 5, (1 - sample) * (h - 10) + 5));
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+          prevYRef.current = y;
+        }
+        ctx.stroke();
+        ctx.restore();
+        sweepXRef.current = 0;
       }
     }
 
@@ -73,10 +109,10 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
           const h = c.height;
           const t = performance.now() * 0.005;
 
-          ctx.fillStyle = 'rgba(2, 5, 10, 0.085)';
+          ctx.fillStyle = 'rgba(2, 19, 11, 0.075)';
           ctx.fillRect(0, 0, w, h);
 
-          ctx.strokeStyle = 'rgba(148, 163, 184, 0.055)';
+          ctx.strokeStyle = 'rgba(16, 185, 129, 0.08)';
           ctx.lineWidth = 0.75;
           ctx.beginPath();
           for (let gx = 0; gx <= w; gx += 32) {
@@ -89,31 +125,27 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
           }
           ctx.stroke();
 
-          ctx.strokeStyle = 'rgba(125, 211, 252, 0.11)';
+          ctx.strokeStyle = 'rgba(52, 211, 153, 0.18)';
           ctx.beginPath();
           ctx.moveTo(0, h / 2);
           ctx.lineTo(w, h / 2);
-          for (let tx = 0; tx <= w; tx += 8) {
-            ctx.moveTo(tx, h / 2 - 2);
-            ctx.lineTo(tx, h / 2 + 2);
-          }
           ctx.stroke();
 
-          const { sample, traceColor } = computeOscilloscopeSample(
+          const { sample } = computeOscilloscopeSample(
             activeMode,
             uniforms,
             t,
-            meta.statusColor
+            '#34d399'
           );
 
           const nextX = (sweepXRef.current + 2.4) % w;
           const nextY = Math.max(5, Math.min(h - 5, (1 - sample) * (h - 10) + 5));
 
           ctx.save();
-          ctx.strokeStyle = traceColor;
-          ctx.shadowColor = traceColor;
-          ctx.shadowBlur = 8;
-          ctx.lineWidth = 1.75;
+          ctx.strokeStyle = '#34d399';
+          ctx.shadowColor = '#10b981';
+          ctx.shadowBlur = 9;
+          ctx.lineWidth = 1.85;
           ctx.beginPath();
           if (nextX > sweepXRef.current) {
             ctx.moveTo(sweepXRef.current, prevYRef.current);
@@ -121,9 +153,9 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
           }
           ctx.stroke();
 
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = '#ecfdf5';
           ctx.beginPath();
-          ctx.arc(nextX, nextY, 2.0, 0, Math.PI * 2);
+          ctx.arc(nextX, nextY, 2.1, 0, Math.PI * 2);
           ctx.fill();
           ctx.restore();
 
@@ -145,7 +177,13 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
 
   return (
     <aside className="floating-instrument-panel left-instrument-rack">
-      <div className="ws-pane-header" style={{ padding: '0 6px' }}>
+      <div
+        className="ws-pane-header zone-header-faders"
+        style={{
+          padding: '0 8px',
+          borderLeft: `3px solid ${meta.statusColor}`
+        }}
+      >
         <div className="rack-mode-pills">
           <button
             className={`rack-mode-pill ${activeTab === 'faders' ? 'active' : ''}`}
@@ -162,7 +200,14 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
             <span>INTUITION</span>
           </button>
         </div>
-        <span className="rack-module-tag" style={{ color: meta.statusColor }}>
+        <span
+          className="rack-module-tag"
+          style={{
+            color: meta.statusColor,
+            borderColor: `${meta.statusColor}44`,
+            background: `${meta.statusColor}14`
+          }}
+        >
           {meta.badgeNumber.split(' // ')[0]} // {meta.id.toUpperCase()}
         </span>
       </div>
@@ -192,11 +237,18 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                 ? ((s.criticalValue - s.min) / (s.max - s.min)) * 100
                 : null;
             const isHovered = hoveredSlider === s.id;
+            const chColor = getChannelAccent(sIdx);
 
             return (
               <div
                 className={`daw-fader-module ${isHovered ? 'hovered' : ''}`}
                 key={s.id}
+                style={{
+                  borderLeft: `3px solid ${chColor}`,
+                  boxShadow: isHovered
+                    ? `inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 1px ${chColor}55`
+                    : undefined
+                }}
                 onMouseEnter={() => {
                   setHoveredSlider(s.id);
                   onHoverOrScrubSlider?.(sIdx);
@@ -206,10 +258,17 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                 }}
               >
                 <div className="daw-fader-header">
-                  <span className="daw-fader-label">{s.label}</span>
+                  <span className="daw-fader-label" style={{ color: '#f8fafc' }}>
+                    {s.label}
+                  </span>
                   <div className="daw-readout-group">
                     <span
                       className="daw-symbol-pill"
+                      style={{
+                        color: chColor,
+                        background: `${chColor}15`,
+                        border: `1px solid ${chColor}33`
+                      }}
                       dangerouslySetInnerHTML={{
                         __html: katex.renderToString(s.symbol, {
                           throwOnError: false,
@@ -219,7 +278,10 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                     />
                     <span
                       className="daw-digital-val"
-                      style={{ color: meta.statusColor }}
+                      style={{
+                        color: chColor,
+                        borderColor: `${chColor}40`
+                      }}
                     >
                       {val.toFixed(2)}
                       {s.unit ? ` ${s.unit}` : ''}
@@ -243,7 +305,7 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                     className="daw-signal-fill"
                     style={{
                       width: `${pct}%`,
-                      background: `linear-gradient(90deg, ${meta.statusColor}18 0%, ${meta.statusColor}58 100%)`
+                      background: `linear-gradient(90deg, ${chColor}22 0%, ${chColor}75 100%)`
                     }}
                   />
 
@@ -251,19 +313,19 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                     className="daw-fader-cap"
                     style={{
                       left: `${pct}%`,
-                      borderColor: isHovered ? '#ffffff' : meta.statusColor,
+                      borderColor: isHovered ? '#ffffff' : chColor,
                       boxShadow: isHovered
-                        ? `0 0 12px ${meta.statusColor}`
+                        ? `0 0 12px ${chColor}`
                         : '0 2px 6px rgba(0,0,0,0.85)'
                     }}
                   >
-                    <span className="daw-cap-centerline" style={{ background: meta.statusColor }} />
+                    <span className="daw-cap-centerline" style={{ background: chColor }} />
                   </div>
 
                   {isHovered && (
                     <div
                       className="daw-floating-tracker"
-                      style={{ left: `${pct}%`, color: meta.statusColor }}
+                      style={{ left: `${pct}%`, color: chColor }}
                     >
                       {val.toFixed(2)}
                     </div>
@@ -288,7 +350,7 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                 <div className="daw-scale-labels">
                   <span>{s.min.toFixed(1)}</span>
                   {s.criticalValue !== undefined && (
-                    <span style={{ color: '#f43f5e' }}>
+                    <span style={{ color: '#fb7185', fontWeight: 600 }}>
                       CRIT: {s.criticalValue.toFixed(1)}
                     </span>
                   )}
@@ -308,8 +370,8 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
               marginBottom: 10,
               padding: 9,
               borderRadius: 6,
-              background: 'rgba(251, 191, 36, 0.06)',
-              border: '1px solid rgba(251, 191, 36, 0.2)'
+              background: 'rgba(251, 191, 36, 0.08)',
+              border: '1px solid rgba(251, 191, 36, 0.28)'
             }}
           >
             <strong style={{ color: '#fbbf24', display: 'block', marginBottom: 4 }}>
@@ -322,11 +384,11 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
             style={{
               padding: 9,
               borderRadius: 6,
-              background: 'rgba(125, 211, 252, 0.05)',
-              border: '1px solid rgba(125, 211, 252, 0.16)'
+              background: 'rgba(56, 189, 248, 0.07)',
+              border: '1px solid rgba(56, 189, 248, 0.24)'
             }}
           >
-            <strong style={{ color: '#7dd3fc', display: 'block', marginBottom: 4 }}>
+            <strong style={{ color: '#38bdf8', display: 'block', marginBottom: 4 }}>
               🔬 Formal Mathematical Mechanism:
             </strong>
             {meta.formalSummary}
@@ -342,14 +404,25 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
         </div>
       )}
 
-      <div className="ws-pane-header">
+      <div className="ws-pane-header zone-header-scope">
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Activity size={14} strokeWidth={1.5} color={meta.statusColor} />
-          <span>CRT PHOSPHOR SCOPE</span>
+          <Activity size={14} strokeWidth={1.5} color="#34d399" />
+          <span style={{ color: '#a7f3d0' }}>CRT PHOSPHOR SCOPE</span>
         </div>
-        <span style={{ color: '#34d399', fontSize: 8.5 }}>60 HZ PERSISTENCE</span>
+        <span
+          style={{
+            color: '#34d399',
+            fontSize: 8,
+            background: 'rgba(16, 185, 129, 0.14)',
+            padding: '1px 6px',
+            borderRadius: 999,
+            border: '1px solid rgba(16, 185, 129, 0.3)'
+          }}
+        >
+          60 HZ RADAR
+        </span>
       </div>
-      <div className="ws-section-block">
+      <div className="ws-section-block scope-zone-body">
         <div className="oscilloscope-crt-bezel">
           <canvas
             ref={scopeCanvasRef}
@@ -359,26 +432,37 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
           />
           <div className="crt-scanline-overlay" />
           <div className="crt-corner-readout">
-            <span>CH1: Ψ_EFF</span>
-            <span>DECAY: τ=18ms</span>
+            <span style={{ color: '#6ee7b7' }}>CH1: Ψ_EFF</span>
+            <span style={{ color: '#34d399' }}>DECAY: τ=18ms</span>
           </div>
         </div>
       </div>
 
       <div
-        className="ws-pane-header clickable"
+        className="ws-pane-header clickable zone-header-repo"
         onClick={() => setTreeExpanded(!treeExpanded)}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {treeExpanded ? (
-            <ChevronDown size={14} strokeWidth={1.5} />
+            <ChevronDown size={14} strokeWidth={1.5} color="#c084fc" />
           ) : (
-            <ChevronRight size={14} strokeWidth={1.5} />
+            <ChevronRight size={14} strokeWidth={1.5} color="#c084fc" />
           )}
-          <FolderTree size={14} strokeWidth={1.5} />
-          <span>LEAN 4 REPOSITORY MODULES</span>
+          <FolderTree size={14} strokeWidth={1.5} color="#c084fc" />
+          <span style={{ color: '#e9d5ff' }}>LEAN 4 REPOSITORY MODULES</span>
         </div>
-        <span style={{ color: '#64748b' }}>7 FILES</span>
+        <span
+          style={{
+            color: '#d8b4fe',
+            fontSize: 8,
+            background: 'rgba(192, 132, 252, 0.14)',
+            padding: '1px 6px',
+            borderRadius: 999,
+            border: '1px solid rgba(192, 132, 252, 0.3)'
+          }}
+        >
+          7 FILES
+        </span>
       </div>
 
       {treeExpanded && (
@@ -389,6 +473,10 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
               <button
                 key={file.id}
                 className={`ws-tree-item ${isSelected ? 'selected' : ''}`}
+                style={{
+                  borderLeftColor: isSelected ? file.badgeColor : 'transparent',
+                  background: isSelected ? `${file.badgeColor}18` : undefined
+                }}
                 onClick={() => {
                   onSelectFile(file.id);
                   if (file.moduleGroup !== activeMode) {
@@ -397,8 +485,18 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                 }}
               >
                 <FileCode size={14} strokeWidth={1.5} color={file.badgeColor} />
-                <span className="ws-tree-filename">{file.filename}</span>
-                <span className="ws-tree-loc">{file.linesCount}L</span>
+                <span
+                  className="ws-tree-filename"
+                  style={{ color: isSelected ? '#ffffff' : '#cbd5e1' }}
+                >
+                  {file.filename}
+                </span>
+                <span
+                  className="ws-tree-loc"
+                  style={{ color: isSelected ? file.badgeColor : '#64748b' }}
+                >
+                  {file.linesCount}L
+                </span>
               </button>
             );
           })}

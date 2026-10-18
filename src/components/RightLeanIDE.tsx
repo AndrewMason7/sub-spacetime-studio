@@ -106,9 +106,9 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
           <span
             key={i}
             style={{
-              color: '#7dd3fc',
-              fontWeight: 600,
-              textShadow: '0 0 8px rgba(125, 211, 252, 0.25)'
+              color: '#fbbf24',
+              fontWeight: 700,
+              textShadow: '0 0 8px rgba(251, 191, 36, 0.28)'
             }}
           >
             {part}
@@ -167,10 +167,13 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
 
   return (
     <aside className="floating-instrument-panel right-lean-workspace">
-      <div className="ws-pane-header">
+      <div
+        className="ws-pane-header zone-header-ide"
+        style={{ borderLeft: `3px solid ${activeFile.badgeColor}` }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <ShieldCheck size={14} strokeWidth={1.5} color={activeFile.badgeColor} />
-          <span>SHIKI AST // LEAN 4 WORKSPACE</span>
+          <span style={{ color: '#bae6fd' }}>SHIKI AST // LEAN 4 WORKSPACE</span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -208,7 +211,8 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
                 key={fid}
                 className={`ide-file-tab ${isActive ? 'active' : ''}`}
                 style={{
-                  borderTopColor: isActive ? file.badgeColor : 'transparent'
+                  borderTopColor: isActive ? file.badgeColor : 'transparent',
+                  background: isActive ? `${file.badgeColor}18` : undefined
                 }}
                 onClick={() => onSelectFile(fid)}
               >
@@ -232,8 +236,8 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
       </div>
 
       <div className="ide-breadcrumb">
-        <Cpu size={12} strokeWidth={1.5} color="#64748b" style={{ flexShrink: 0 }} />
-        <span>openai-math</span>
+        <Cpu size={12} strokeWidth={1.5} color="#38bdf8" style={{ flexShrink: 0 }} />
+        <span style={{ color: '#7dd3fc' }}>openai-math</span>
         <span>/</span>
         <span className="ide-breadcrumb-path">{activeFile.fullPath}</span>
         <span className="ide-ln-pill">
@@ -251,7 +255,7 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
             className={`ide-diag-tab ${diagTab === 'audit' ? 'active' : ''}`}
             onClick={() => setDiagTab('audit')}
           >
-            <Terminal size={14} strokeWidth={1.5} />
+            <Terminal size={13} strokeWidth={1.5} color="#fbbf24" />
             <span>SCALPEL AUDIT (LEAN VS PDF SCOPE)</span>
           </button>
           <button
@@ -259,9 +263,9 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
             onClick={() => setDiagTab('infoview')}
           >
             {isWithdrawn ? (
-              <AlertOctagon size={14} strokeWidth={1.5} color="#f43f5e" />
+              <AlertOctagon size={13} strokeWidth={1.5} color="#f43f5e" />
             ) : (
-              <CheckCircle2 size={14} strokeWidth={1.5} color="#34d399" />
+              <CheckCircle2 size={13} strokeWidth={1.5} color="#34d399" />
             )}
             <span>LEAN 4 INFOVIEW GOAL STATE</span>
           </button>
@@ -269,24 +273,30 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
 
         {diagTab === 'audit' ? (
           <div className="ide-diag-body">
-            <div style={{ color: '#e2e8f0', marginBottom: 4 }}>
-              <strong>Primary Source:</strong> {meta.paperRef}
+            <div style={{ color: '#fde68a', marginBottom: 4 }}>
+              <strong style={{ color: '#fbbf24' }}>Primary Source:</strong> {meta.paperRef}
             </div>
-            <div>{meta.auditScopeNote}</div>
+            <div style={{ color: '#cbd5e1' }}>{meta.auditScopeNote}</div>
             <table className="diag-table">
               <thead>
                 <tr>
-                  <th>ARGON INPUT</th>
-                  <th>ARGON OUTPUT</th>
-                  <th>GPU KERNEL PASS</th>
-                  <th>AUDIT CHECK</th>
+                  <th style={{ color: '#38bdf8' }}>ARGON INPUT</th>
+                  <th style={{ color: '#c084fc' }}>ARGON OUTPUT</th>
+                  <th style={{ color: '#fbbf24' }}>GPU KERNEL PASS</th>
+                  <th style={{ color: '#34d399' }}>AUDIT CHECK</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>{meta.argonPipelineStats.inputTokens}</td>
-                  <td>{meta.argonPipelineStats.outputTokens}</td>
-                  <td>{meta.argonPipelineStats.shaderPasses}</td>
+                  <td style={{ color: '#e0f2fe', fontWeight: 600 }}>
+                    {meta.argonPipelineStats.inputTokens}
+                  </td>
+                  <td style={{ color: '#f3e8ff', fontWeight: 600 }}>
+                    {meta.argonPipelineStats.outputTokens}
+                  </td>
+                  <td style={{ color: '#fef3c7', fontWeight: 600 }}>
+                    {meta.argonPipelineStats.shaderPasses}
+                  </td>
                   <td style={{ color: meta.statusColor, fontWeight: 700 }}>
                     {meta.argonPipelineStats.verificationLatency}
                   </td>
@@ -314,10 +324,10 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
                 <div style={{ color: '#34d399', marginBottom: 4 }}>
                   ✓ leanprover/lean4:v4.34.1 — All declarations in {activeFile.filename} typechecked.
                 </div>
-                <div style={{ color: '#94a3b8' }}>
+                <div style={{ color: '#cbd5e1' }}>
                   • Universes: u v w • Mathlib4 revision: 4.34.1-patched • Mesh: Blender 5.2 GLB Loaded
                 </div>
-                <div style={{ color: '#7dd3fc', marginTop: 6 }}>
+                <div style={{ color: '#fbbf24', marginTop: 6 }}>
                   ▸ Active Shader Binding: Line {activeLineIdx + 1} synchronized with DAW Uniform Rack.
                 </div>
               </div>
