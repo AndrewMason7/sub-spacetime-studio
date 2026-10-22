@@ -39,9 +39,10 @@ export class QuantumSpacetimeEngine {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
-  private composer: EffectComposer;
-  private bloomEffect: BloomEffect;
-  private chromaticEffect: ChromaticAberrationEffect;
+  private composer: EffectComposer | null = null;
+  private bloomEffect: BloomEffect | null = null;
+  private chromaticEffect: ChromaticAberrationEffect | null = null;
+  private usePostProcessing = true;
   private controls: OrbitControls;
   private gridHelper: THREE.GridHelper;
 
@@ -97,21 +98,35 @@ export class QuantumSpacetimeEngine {
     this.scene.background = new THREE.Color(0x030508);
     this.scene.fog = new THREE.FogExp2(0x030508, 0.025);
 
-    this.camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 200);
+    const aspect = width / height;
+    const isMobileDevice = typeof window !== 'undefined' && (
+      /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      ('ontouchstart' in window && window.innerWidth <= 1024) ||
+      window.innerWidth <= 768
+    );
+
+    // Portrait mobile optical compensation so 3D manifolds are never clipped on phones
+    const initFov = aspect < 1.0 ? Math.min(64, 46 + (1.0 - aspect) * 22) : 46;
+    this.camera = new THREE.PerspectiveCamera(initFov, aspect, 0.1, 200);
+
     // Smoothly align initial camera distance to exact DEFAULT_CAMERA_DIST (9.6 -> 100% zoom)
     const initZ = Math.sqrt(Math.max(1, DEFAULT_CAMERA_DIST * DEFAULT_CAMERA_DIST - 2.1 * 2.1));
     this.camera.position.set(0, 2.1, initZ);
 
     this.renderer = new THREE.WebGLRenderer({
       powerPreference: 'high-performance',
-      antialias: false,
+      antialias: isMobileDevice,
       stencil: false,
       depth: true,
       preserveDrawingBuffer: true
     });
     this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const maxPr = isMobileDevice ? 1.75 : 2;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPr));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.domElement.style.touchAction = 'none';
     container.appendChild(this.renderer.domElement);
 
     const ambientLight = new THREE.AmbientLight(0x1e293b, 1.4);
@@ -132,57 +147,72 @@ export class QuantumSpacetimeEngine {
     this.controls.minDistance = 2.0;
     this.controls.autoRotate = true;
     this.controls.autoRotateSpeed = 0.55;
+    this.controls.touches = {
+      ONE: THREE.TOUCH.ROTATE,
+      TWO: THREE.TOUCH.DOLLY_PAN
+    };
 
     this.gridHelper = new THREE.GridHelper(24, 24, 0x162032, 0x0b101b);
     this.gridHelper.position.y = -3.65;
     this.scene.add(this.gridHelper);
 
-    this.composer = new EffectComposer(this.renderer, {
-      frameBufferType: THREE.HalfFloatType,
-      multisampling: 2
-    });
+    // On mobile devices, bypass heavy/fragile HalfFloat postprocessing for 100% stability & 60fps battery life
+    if (isMobileDevice) {
+      this.usePostProcessing = false;
+    } else {
+      try {
+        this.composer = new EffectComposer(this.renderer, {
+          frameBufferType: THREE.HalfFloatType,
+          multisampling: 2
+        });
 
-    const renderPass = new RenderPass(this.scene, this.camera);
-    this.composer.addPass(renderPass);
+        const renderPass = new RenderPass(this.scene, this.camera);
+        this.composer.addPass(renderPass);
 
-    this.bloomEffect = new BloomEffect({
-      intensity: 0.95,
-      luminanceThreshold: 0.42,
-      luminanceSmoothing: 0.75,
-      mipmapBlur: true
-    });
+        this.bloomEffect = new BloomEffect({
+          intensity: 0.95,
+          luminanceThreshold: 0.42,
+          luminanceSmoothing: 0.75,
+          mipmapBlur: true
+        });
 
-    this.chromaticEffect = new ChromaticAberrationEffect({
-      offset: new THREE.Vector2(0.0014, 0.0014),
-      radialModulation: true,
-      modulationOffset: 0.25
-    });
+        this.chromaticEffect = new ChromaticAberrationEffect({
+          offset: new THREE.Vector2(0.0014, 0.0014),
+          radialModulation: true,
+          modulationOffset: 0.25
+        });
 
-    const noiseEffect = new NoiseEffect({
-      blendFunction: BlendFunction.OVERLAY,
-      premultiply: true
-    });
-    noiseEffect.blendMode.opacity.value = 0.026;
+        const noiseEffect = new NoiseEffect({
+          blendFunction: BlendFunction.OVERLAY,
+          premultiply: true
+        });
+        noiseEffect.blendMode.opacity.value = 0.026;
 
-    const vignetteEffect = new VignetteEffect({
-      eskil: false,
-      offset: 0.28,
-      darkness: 0.68
-    });
+        const vignetteEffect = new VignetteEffect({
+          eskil: false,
+          offset: 0.28,
+          darkness: 0.68
+        });
 
-    const toneMappingEffect = new ToneMappingEffect({
-      mode: ToneMappingMode.ACES_FILMIC
-    });
+        const toneMappingEffect = new ToneMappingEffect({
+          mode: ToneMappingMode.ACES_FILMIC
+        });
 
-    const effectPass = new EffectPass(
-      this.camera,
-      this.bloomEffect,
-      this.chromaticEffect,
-      vignetteEffect,
-      noiseEffect,
-      toneMappingEffect
-    );
-    this.composer.addPass(effectPass);
+        const effectPass = new EffectPass(
+          this.camera,
+          this.bloomEffect,
+          this.chromaticEffect,
+          vignetteEffect,
+          noiseEffect,
+          toneMappingEffect
+        );
+        this.composer.addPass(effectPass);
+        this.usePostProcessing = true;
+      } catch (err) {
+        console.warn('Postprocessing initialization failed, using standard WebGL renderer:', err);
+        this.usePostProcessing = false;
+      }
+    }
 
     this.buildAmbientStarfield();
     this.observerHandles = createObserverHilbertScene();
@@ -378,7 +408,15 @@ export class QuantumSpacetimeEngine {
   }
 
   public captureSnapshotDataUrl(): string {
-    this.composer.render();
+    if (this.usePostProcessing && this.composer) {
+      try {
+        this.composer.render();
+      } catch {
+        this.renderer.render(this.scene, this.camera);
+      }
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
     return this.renderer.domElement.toDataURL('image/png');
   }
 
@@ -397,8 +435,10 @@ export class QuantumSpacetimeEngine {
 
     this.shockwavePulse = Math.max(0.0, this.shockwavePulse * 0.91 - 0.002);
 
-    const caOffset = 0.0012 + this.shockwavePulse * 0.0016;
-    this.chromaticEffect.offset.set(caOffset, caOffset);
+    if (this.chromaticEffect) {
+      const caOffset = 0.0012 + this.shockwavePulse * 0.0016;
+      this.chromaticEffect.offset.set(caOffset, caOffset);
+    }
 
     this.frameCount++;
     if (now - this.lastFpsTime >= 450) {
@@ -557,17 +597,36 @@ export class QuantumSpacetimeEngine {
     }
 
     this.controls.update();
-    this.composer.render();
+    if (this.usePostProcessing && this.composer) {
+      try {
+        this.composer.render();
+      } catch (err) {
+        console.warn('Postprocessing render exception, falling back to direct WebGL render:', err);
+        this.usePostProcessing = false;
+        this.renderer.render(this.scene, this.camera);
+      }
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
   }
 
   public onResize(): void {
     const width = this.container.clientWidth || window.innerWidth;
     const height = this.container.clientHeight || window.innerHeight;
     if (width === 0 || height === 0) return;
-    this.camera.aspect = width / height;
+    const aspect = width / height;
+    this.camera.aspect = aspect;
+    if (aspect < 1.0) {
+      // Mobile portrait optical compensation: scale FOV dynamically so 3D manifolds are never clipped
+      this.camera.fov = Math.min(64, 46 + (1.0 - aspect) * 22);
+    } else {
+      this.camera.fov = 46;
+    }
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
-    this.composer.setSize(width, height);
+    if (this.usePostProcessing && this.composer) {
+      this.composer.setSize(width, height);
+    }
   }
 
   public dispose(): void {
@@ -587,7 +646,9 @@ export class QuantumSpacetimeEngine {
         }
       }
     });
-    this.composer.dispose();
+    if (this.composer) {
+      this.composer.dispose();
+    }
     this.renderer.dispose();
     if (this.renderer.domElement.parentNode === this.container) {
       this.container.removeChild(this.renderer.domElement);
