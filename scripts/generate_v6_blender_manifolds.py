@@ -1,6 +1,16 @@
 import bpy
 import bmesh
 import math
+import os
+from pathlib import Path
+
+# Resolve output path: prefer repo's public/models, fallback to /tmp
+REPO_ROOT = Path(__file__).resolve().parent.parent if "__file__" in locals() else Path.cwd()
+OUTPUT_DIR = REPO_ROOT / "public" / "models"
+if not OUTPUT_DIR.parent.exists():
+    OUTPUT_DIR = Path("/tmp")
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+print(f"Exporting manifolds to: {OUTPUT_DIR}")
 
 def clear_scene():
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -103,7 +113,7 @@ for k in range(5):
     add_curve_tube(f"HopfFiberRing_{k}", pts, bevel_depth=0.026, closed=True, mat=m)
 
 bpy.ops.export_scene.gltf(
-    filepath="/tmp/einstein_saddle.glb",
+    filepath=str(OUTPUT_DIR / "einstein_saddle.glb"),
     export_format='GLB',
     export_apply=True
 )
@@ -150,7 +160,7 @@ for b_idx in range(6):
     add_curve_tube(f"BesselTreeSpine_{b_idx}", spine_pts, bevel_depth=0.022, closed=False, mat=mat_crt)
 
 bpy.ops.export_scene.gltf(
-    filepath="/tmp/fkcrt_manifold.glb",
+    filepath=str(OUTPUT_DIR / "fkcrt_manifold.glb"),
     export_format='GLB',
     export_apply=True
 )
@@ -210,7 +220,7 @@ for j in range(128):
 add_curve_tube("PhotonRing3M", photon_pts, bevel_depth=0.024, closed=True, mat=mat_photon)
 
 bpy.ops.export_scene.gltf(
-    filepath="/tmp/cks_horizon_funnel.glb",
+    filepath=str(OUTPUT_DIR / "cks_horizon_funnel.glb"),
     export_format='GLB',
     export_apply=True
 )
@@ -261,7 +271,7 @@ for c_idx in range(2):
     add_curve_tube(f"CuspDoublePointLocus_{c_idx}", cusp_pts, bevel_depth=0.025, closed=True, mat=mat_cusp)
 
 bpy.ops.export_scene.gltf(
-    filepath="/tmp/k3_calabi_yau.glb",
+    filepath=str(OUTPUT_DIR / "k3_calabi_yau.glb"),
     export_format='GLB',
     export_apply=True
 )

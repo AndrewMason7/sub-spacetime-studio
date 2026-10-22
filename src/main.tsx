@@ -475,9 +475,13 @@ const WorkstationApp: React.FC = () => {
             <span className="mobile-brand-title">SUB-SPACETIME</span>
             <span
               className="mobile-brand-tag"
-              style={{ color: meta.statusColor }}
+              style={{
+                color: meta.statusColor,
+                borderColor: `${meta.statusColor}44`,
+                background: `${meta.statusColor}18`
+              }}
             >
-              {meta.badgeNumber}
+              {meta.badgeNumber.split(' ')[0] || 'M01'}
             </span>
           </div>
 
@@ -548,10 +552,12 @@ const WorkstationApp: React.FC = () => {
           <div className="mobile-stage-title-pill">
             <span
               className="mobile-status-glow"
-              style={{ backgroundColor: meta.statusColor }}
+              style={{ backgroundColor: meta.statusColor, color: meta.statusColor }}
             />
-            <span className="mobile-stage-name">{meta.title}</span>
-            <span className="mobile-stage-invariant">{meta.subtitle}</span>
+            <span className="mobile-stage-name">{meta.shortTitle}</span>
+            <span className="mobile-stage-invariant">
+              {meta.badgeNumber.split(' // ')[1] || meta.subtitle}
+            </span>
           </div>
 
           <div className="mobile-stage-cam-controls">
@@ -564,6 +570,7 @@ const WorkstationApp: React.FC = () => {
               <RotateCcw size={12} strokeWidth={1.8} />
               <span>Reset</span>
             </button>
+            <div className="mobile-stage-tool-divider" />
             <button
               type="button"
               onClick={handleZoomIn}
@@ -582,6 +589,7 @@ const WorkstationApp: React.FC = () => {
               <ZoomOut size={12} strokeWidth={1.8} />
               <span>−</span>
             </button>
+            <div className="mobile-stage-tool-divider" />
             <button
               type="button"
               onClick={handleToggleAutoRotate}
