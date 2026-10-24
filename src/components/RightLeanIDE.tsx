@@ -223,14 +223,17 @@ export const RightLeanIDE: React.FC<RightLeanIDEProps> = ({
   const isWithdrawn = badgeType === 'WITHDRAWN_NOTICE';
   const isAuditDoc = badgeType === 'AUDIT_MARKDOWN';
   const isComparator = badgeType === 'COMPARATOR_CHALLENGE';
+  const isScaffold = badgeType === 'SCAFFOLD_UNVERIFIED';
 
-  const statusPillLabel = isWithdrawn
-    ? '0 LEAN // WITHDRAWN'
-    : isAuditDoc
-      ? 'AUDIT SPEC // MD'
-      : isComparator
-        ? 'LEAN 4 // COMPARATOR'
-        : 'KERNEL: 0 GOALS';
+  const statusPillLabel = isScaffold
+    ? 'SCAFFOLD // UNVERIFIED'
+    : isWithdrawn
+      ? '0 LEAN // WITHDRAWN'
+      : isAuditDoc
+        ? 'AUDIT SPEC // MD'
+        : isComparator
+          ? 'LEAN 4 // COMPARATOR'
+          : 'KERNEL: 0 GOALS';
 
   return (
     <aside className="floating-instrument-panel right-lean-workspace">

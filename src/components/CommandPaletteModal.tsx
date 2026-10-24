@@ -141,6 +141,18 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
         onTriggerQuickAction('retraction');
         onClose();
       }
+    },
+    {
+      id: 'trig-associahedron',
+      group: 'INSTANT PHYSICS PHASE TRIGGERS',
+      title: 'Raise Associahedron Order (n → n+1: exact 3D → 4D/5D projected shadow)',
+      color: '#5eead4',
+      iconType: 'orbit',
+      execute: () => {
+        onSelectMode('associahedron');
+        onTriggerQuickAction('associahedron');
+        onClose();
+      }
     }
   ];
 

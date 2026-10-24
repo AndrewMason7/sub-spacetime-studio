@@ -1,4 +1,5 @@
 import { SceneModeId, SimulationUniformState } from '../types/workstation';
+import { clampOrder, invariantsFor } from '../data/associahedronInvariants';
 
 export interface ViewportTelemetryReadout {
   invariantStr: string;
@@ -45,6 +46,38 @@ export function resolveActiveAstFocus(
 ): AstPointFocus {
   const clamp = (ln: number) => Math.min(ln, Math.max(0, maxLines - 1));
   const sIdx = sliderIdx ?? 0;
+
+  if (fileId === 'associahedron-lean') {
+    const order = clampOrder(uniforms?.associahedronOrder ?? 4);
+    const inv = invariantsFor(order, uniforms?.projectionSweep ?? 0.5);
+    const focus = uniforms?.facetResidueFocus ?? 0.15;
+    if (sIdx === 0) {
+      return {
+        lineIdx: clamp(27),
+        endLineIdx: clamp(29),
+        symbolToken: 'loday_sum_const',
+        phaseNote: `n = ${order}: Σ x_i = ${inv.coordinateSum} = n(n+1)/2 over ${inv.combinatorialVertices} Catalan vertices`
+      };
+    }
+    if (sIdx === 1) {
+      return {
+        lineIdx: clamp(38),
+        endLineIdx: clamp(39),
+        symbolToken: 'facet_count',
+        phaseNote: inv.projected
+          ? `PROJECTED shadow: hull V=${inv.frame.V} E=${inv.frame.E} F=${inv.frame.F} (χ=${inv.frame.euler})`
+          : `EXACT 3D hull: V=${inv.frame.V} E=${inv.frame.E} F=${inv.frame.F} (χ=${inv.frame.euler})`
+      };
+    }
+    return {
+      lineIdx: clamp(47),
+      endLineIdx: clamp(48),
+      symbolToken: 'n4_isometric_embedding',
+      phaseNote: inv.projected
+        ? `Pole focus Ω = ${focus.toFixed(2)} — facet residues of the canonical form`
+        : `Isometry error ${(inv.isometryMaxError ?? 0).toExponential(1)} — no projection in play`
+    };
+  }
 
   if (fileId === 'einstein-four-classification') {
     if (sIdx === 0) {
@@ -368,6 +401,17 @@ export function computeViewportTelemetry(
     };
   }
 
+  if (activeMode === 'associahedron') {
+    const inv = invariantsFor(clampOrder(uniforms.associahedronOrder), uniforms.projectionSweep);
+    return {
+      invariantStr: `V = ${inv.frame.V} // E = ${inv.frame.E} // F = ${inv.frame.F} // χ = ${inv.frame.euler}`,
+      topologyStr: inv.projected
+        ? `PROJECTED n=${inv.order} — ${inv.combinatorialVertices} pts → 3D shadow`
+        : `EXACT 3D n=${inv.order} — isometric (1.8e-15)`,
+      glbMeshName: 'associahedron.glb (1 exact + 48 hulls)'
+    };
+  }
+
   const m = Math.round(uniforms.doublePointCountM);
   const iNew = Math.round(-m + uniforms.stabilizationSign * m);
   return {
@@ -412,6 +456,15 @@ export function computeOscilloscopeSample(
         0.35 *
         Math.min(1, uniforms.bondiMass / 2.2) +
       Math.cos(t * 9.0) * 0.07 * (uniforms.boundaryQubitFlux / 2.5);
+  } else if (activeMode === 'associahedron') {
+    const inv = invariantsFor(clampOrder(uniforms.associahedronOrder), uniforms.projectionSweep);
+    const focus = uniforms.facetResidueFocus;
+    // one pulse per facet of the displayed hull — the trace literally counts faces
+    sample =
+      0.5 +
+      Math.sin(t * (1.6 + inv.frame.F * 0.08) + focus * Math.PI * 2.0) * 0.22 +
+      Math.sin(t * 8.5) * 0.06 * focus;
+    traceColor = inv.projected ? '#93c5fd' : '#5eead4';
   } else if (activeMode === 'retraction') {
     const shattered = uniforms.stabilizationSign < 0.0;
     sample =
@@ -456,6 +509,16 @@ export function getQuickActionSpec(
         uniforms.bondiMass < 1.8
           ? 'PULSE 105-QUBIT WILLOW BOUNDARY FLUX (m → 2.25 M_☉)'
           : 'RELAX WILLOW BOUNDARY HORIZON (m → 0.85 M_☉)',
+      isDanger: false
+    };
+  }
+  if (activeMode === 'associahedron') {
+    const n = clampOrder(uniforms.associahedronOrder);
+    return {
+      label:
+        n < 6
+          ? `RAISE ORDER (n = ${n} → ${n + 1}): GO PROJECTED`
+          : 'DROP TO EXACT 3D (n = 6 → 4): NO PROJECTION',
       isDanger: false
     };
   }

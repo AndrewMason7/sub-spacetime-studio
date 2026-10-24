@@ -61,6 +61,7 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
   const getChannelAccent = (sliderIdx: number): string => {
     if (sliderIdx === 0) return meta.statusColor;
     if (sliderIdx === 1) return '#fbbf24'; // Warm Tactile Amber-Gold for Channel 2
+    if (activeMode === 'associahedron') return '#5eead4';
     return activeMode === 'fkcrt' || activeMode === 'retraction' ? '#38bdf8' : '#c084fc'; // Cyan/Violet for Channel 3
   };
 

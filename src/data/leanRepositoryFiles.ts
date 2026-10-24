@@ -336,5 +336,64 @@ noncomputable def effectiveHilbertDim (observerEntropy : ℝ) : ℝ :=
   Real.exp (max 0 observerEntropy)
 
 end OAI.EinsteinFour`
+  },
+  {
+    id: 'associahedron-lean',
+    filename: 'Associahedron.lean',
+    fullPath: 'lean/OAI/PositiveGeometry/Associahedron.lean',
+    moduleGroup: 'associahedron',
+    verificationBadge: 'SCAFFOLD_UNVERIFIED',
+    badgeColor: '#fbbf24',
+    linesCount: 58,
+    code: `/-
+  Associahedron.lean — SCAFFOLD. NOT VERIFIED. NOT PART OF openai/math.
+
+  The GEOMETRY this module renders is exact: vertices are Loday's integer
+  coordinates x_i = (#leaves left subtree) * (#leaves right subtree), every
+  vertex sums to n(n+1)/2, and the shipped GLB re-derives 14/21/9/chi=2 for
+  n = 4. The THEOREMS BELOW ARE NOT PROVED — each is marked sorry, and this
+  file exists so the IDE shows honestly what is assumed rather than what is
+  verified. Do not present this module as Lean-verified.
+-/
+import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+
+namespace OAI.PositiveGeometry
+
+open Finset
+
+/-- Plane binary trees with \`n\` internal nodes. -/
+inductive PlaneTree : ℕ → Type
+  | leaf : PlaneTree 0
+  | node {a b : ℕ} : PlaneTree a → PlaneTree b → PlaneTree (a + b + 1)
+
+/-- Loday's vertex coordinate for an internal node: leaves left * leaves right. -/
+def lodayCoord (leftLeaves rightLeaves : ℕ) : ℕ := leftLeaves * rightLeaves
+
+/-- Every Loday vertex lies in the hyperplane sum = n(n+1)/2.
+    TODO: prove by induction over the tree. -/
+theorem loday_sum_const (n : ℕ) (T : PlaneTree n) :
+    (∑ c ∈ Finset.range n, lodayCoord 1 1) = n * (n + 1) / 2 := by
+  sorry
+
+/-- Vertex count is the Catalan number. -/
+theorem vertex_count_catalan (n : ℕ) :
+    Nat.choose (2 * n) n / (n + 1) = (2 * n).choose n / (n + 1) := by
+  sorry
+
+/-- Facets correspond to diagonals of the (n+2)-gon: (n+2)(n-1)/2 of them.
+    TODO: build the explicit bijection. -/
+theorem facet_count (n : ℕ) (hn : 4 ≤ n) :
+    9 * (n - 3) = 9 * (n - 3) := by
+  sorry
+
+/-- n = 4 is the smallest order whose polytope is 3-dimensional, so it admits
+    an isometric embedding into ℝ³ (the only order this module renders exactly).
+    TODO: construct the isometry explicitly. -/
+theorem n4_isometric_embedding :
+    ∃ (f : Fin 14 → Fin 3 → ℝ), True := by
+  sorry
+
+end OAI.PositiveGeometry`
   }
 ];

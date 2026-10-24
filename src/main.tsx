@@ -47,7 +47,10 @@ const DEFAULT_UNIFORMS: SimulationUniformState = {
   kerrSpin: 0.72,
   stabilizationSign: 1.0,
   doublePointCountM: 6.0,
-  calabiYauSlice: 1.57
+  calabiYauSlice: 1.57,
+  associahedronOrder: 4.0,
+  projectionSweep: 0.5,
+  facetResidueFocus: 0.15
 };
 
 const SINGLETON_AUDIO = AudioSynthesizer.getInstance();
@@ -265,6 +268,16 @@ const WorkstationApp: React.FC = () => {
             false
           );
         } else if (
+          key === 'associahedronOrder' ||
+          key === 'projectionSweep' ||
+          key === 'facetResidueFocus'
+        ) {
+          audioRef.current.modulateFromPhysics(
+            'associahedron',
+            Math.min(1, next.projectionSweep),
+            next.associahedronOrder >= 5
+          );
+        } else if (
           key === 'stabilizationSign' ||
           key === 'doublePointCountM' ||
           key === 'calabiYauSlice'
@@ -316,6 +329,9 @@ const WorkstationApp: React.FC = () => {
         animateUniform('boundaryQubitFlux', expand ? 2.85 : 1.35, 1100);
       } else if (mode === 'retraction') {
         animateUniform('stabilizationSign', s.stabilizationSign >= 0 ? -1.0 : 1.0, 900);
+      } else if (mode === 'associahedron') {
+        const n = Math.round(s.associahedronOrder);
+        animateUniform('associahedronOrder', n < 6 ? n + 1 : 4, 700);
       }
     },
     [animateUniform, uniforms]
@@ -419,6 +435,9 @@ const WorkstationApp: React.FC = () => {
         animateUniform('bondiMass', 0.25 + pct * 2.25, 750);
       } else if (activeMode === 'retraction') {
         animateUniform('stabilizationSign', 1.0 - pct * 2.0, 750);
+      } else if (activeMode === 'associahedron') {
+        animateUniform('projectionSweep', pct, 750);
+        animateUniform('facetResidueFocus', (pct * 3) % 1, 750);
       }
     },
     [activeMode, animateUniform, stopDirectorTour]

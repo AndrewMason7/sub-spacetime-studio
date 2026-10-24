@@ -85,6 +85,7 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers): void {
       else if (e.key === '2') h.onSelectMode('fkcrt');
       else if (e.key === '3') h.onSelectMode('hologram');
       else if (e.key === '4') h.onSelectMode('retraction');
+      else if (e.key === '5') h.onSelectMode('associahedron');
       else if (e.key.toLowerCase() === 'h') h.onToggleDashboardHidden();
       else if (e.key.toLowerCase() === 'z') h.onToggleSideRacksHidden();
       else if (e.key.toLowerCase() === 'm') h.onToggleMute();

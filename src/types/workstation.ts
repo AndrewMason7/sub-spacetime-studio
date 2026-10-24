@@ -1,4 +1,4 @@
-export type SceneModeId = 'observer' | 'fkcrt' | 'hologram' | 'retraction';
+export type SceneModeId = 'observer' | 'fkcrt' | 'hologram' | 'retraction' | 'associahedron';
 
 export type CameraPresetId = 'perspective' | 'top' | 'front' | 'right' | 'closeup';
 
@@ -29,6 +29,9 @@ export interface SimulationUniformState {
   stabilizationSign: number;
   doublePointCountM: number;
   calabiYauSlice: number;
+  associahedronOrder: number;
+  projectionSweep: number;
+  facetResidueFocus: number;
 }
 
 export interface LeanVirtualFile {
@@ -36,7 +39,7 @@ export interface LeanVirtualFile {
   filename: string;
   fullPath: string;
   moduleGroup: SceneModeId;
-  verificationBadge: 'VERIFIED_ZERO_SORRY' | 'COMPARATOR_CHALLENGE' | 'AUDIT_MARKDOWN' | 'WITHDRAWN_NOTICE';
+  verificationBadge: 'VERIFIED_ZERO_SORRY' | 'COMPARATOR_CHALLENGE' | 'AUDIT_MARKDOWN' | 'WITHDRAWN_NOTICE' | 'SCAFFOLD_UNVERIFIED';
   badgeColor: string;
   linesCount: number;
   code: string;
@@ -49,7 +52,7 @@ export interface TheoremMetadata {
   shortTitle: string;
   title: string;
   subtitle: string;
-  statusBadge: 'VERIFIED_THEOREM' | 'LEAN4_PARTIAL_SCOPE' | 'LEAN4_FULL' | 'WITHDRAWN_SIGN_ERROR';
+  statusBadge: 'VERIFIED_THEOREM' | 'LEAN4_PARTIAL_SCOPE' | 'LEAN4_FULL' | 'WITHDRAWN_SIGN_ERROR' | 'SCAFFOLD_UNVERIFIED';
   statusLabel: string;
   statusColor: string;
   paperRef: string;

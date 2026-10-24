@@ -17,6 +17,7 @@ import { createObserverHilbertScene, ObserverSceneHandles } from './shaders/obse
 import { createFKCRTScene, FKCRTSceneHandles } from './shaders/fkcrtPhaseShader';
 import { createWillowHologramScene, WillowHologramHandles } from './shaders/willowHologramShader';
 import { createK3RetractionScene, K3RetractionHandles } from './shaders/k3RetractionShader';
+import { createAssociahedronScene, AssociahedronHandles } from './shaders/associahedronShader';
 import { ManifoldGlbArticulator } from './ManifoldGlbArticulator';
 
 /**
@@ -28,7 +29,8 @@ const SCENE_BASE_SCALES: Record<SceneModeId, number> = {
   observer: 0.84,
   fkcrt: 0.84,
   hologram: 0.84,
-  retraction: 0.88
+  retraction: 0.88,
+  associahedron: 0.84
 };
 
 const OPTICAL_CENTER_Y = 0.06;
@@ -50,6 +52,7 @@ export class QuantumSpacetimeEngine {
   private fkcrtHandles: FKCRTSceneHandles;
   private willowHandles: WillowHologramHandles;
   private k3Handles: K3RetractionHandles;
+  private assoHandles: AssociahedronHandles;
   private starfieldPoints!: THREE.Points;
   private glbArticulator: ManifoldGlbArticulator;
 
@@ -58,7 +61,8 @@ export class QuantumSpacetimeEngine {
     observer: 1.0,
     fkcrt: 0.0,
     hologram: 0.0,
-    retraction: 0.0
+    retraction: 0.0,
+    associahedron: 0.0
   };
 
   private simTime = 0.0;
@@ -86,7 +90,10 @@ export class QuantumSpacetimeEngine {
     kerrSpin: 0.72,
     stabilizationSign: 1.0,
     doublePointCountM: 6.0,
-    calabiYauSlice: 1.57
+    calabiYauSlice: 1.57,
+    associahedronOrder: 4.0,
+    projectionSweep: 0.5,
+    facetResidueFocus: 0.15
   };
 
   constructor(container: HTMLElement) {
@@ -219,32 +226,38 @@ export class QuantumSpacetimeEngine {
     this.fkcrtHandles = createFKCRTScene();
     this.willowHandles = createWillowHologramScene();
     this.k3Handles = createK3RetractionScene();
+    this.assoHandles = createAssociahedronScene();
 
     this.observerHandles.group.position.y = OPTICAL_CENTER_Y;
     this.fkcrtHandles.group.position.y = OPTICAL_CENTER_Y;
     this.willowHandles.group.position.y = OPTICAL_CENTER_Y;
     this.k3Handles.group.position.y = OPTICAL_CENTER_Y;
+    this.assoHandles.group.position.y = OPTICAL_CENTER_Y;
 
     this.observerHandles.group.scale.setScalar(SCENE_BASE_SCALES.observer);
     this.fkcrtHandles.group.scale.setScalar(0.01);
     this.willowHandles.group.scale.setScalar(0.01);
     this.k3Handles.group.scale.setScalar(0.01);
+    this.assoHandles.group.scale.setScalar(0.01);
 
     this.fkcrtHandles.group.visible = false;
     this.willowHandles.group.visible = false;
     this.k3Handles.group.visible = false;
+    this.assoHandles.group.visible = false;
 
     this.scene.add(this.observerHandles.group);
     this.scene.add(this.fkcrtHandles.group);
     this.scene.add(this.willowHandles.group);
     this.scene.add(this.k3Handles.group);
+    this.scene.add(this.assoHandles.group);
 
     this.glbArticulator = new ManifoldGlbArticulator();
     this.glbArticulator.loadAllManifolds({
       observerGroup: this.observerHandles.group,
       fkcrtGroup: this.fkcrtHandles.group,
       willowGroup: this.willowHandles.group,
-      k3Group: this.k3Handles.group
+      k3Group: this.k3Handles.group,
+      associahedronGroup: this.assoHandles.group
     });
   }
 
@@ -457,10 +470,11 @@ export class QuantumSpacetimeEngine {
       observer: this.observerHandles.group,
       fkcrt: this.fkcrtHandles.group,
       hologram: this.willowHandles.group,
-      retraction: this.k3Handles.group
+      retraction: this.k3Handles.group,
+      associahedron: this.assoHandles.group
     };
 
-    const modes: SceneModeId[] = ['observer', 'fkcrt', 'hologram', 'retraction'];
+    const modes: SceneModeId[] = ['observer', 'fkcrt', 'hologram', 'retraction', 'associahedron'];
     const morphSpeed = Math.min(1.0, dt * 8.5);
 
     for (const m of modes) {
@@ -577,6 +591,13 @@ export class QuantumSpacetimeEngine {
       }
 
       this.glbArticulator.updateK3Manifold(elapsed, this.state);
+    }
+
+    if (this.assoHandles.group.visible) {
+      this.assoHandles.update(elapsed, this.state.facetResidueFocus, this.state.projectionSweep);
+      // the GLB hulls tumble inside the group; the group itself stays put so the
+      // baked facet normals keep sweeping the bloom pass
+      this.glbArticulator.updateAssociahedronManifold(elapsed, this.state);
     }
 
     // Continuous 360° Orbital Crane & Elevation Camera Sweep during Director's Cut Tour
