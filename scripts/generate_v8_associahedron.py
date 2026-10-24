@@ -43,6 +43,13 @@ ORDERS = [4, 5, 6]
 SWEEP_FRAMES = 24
 SWEEP_AMPLITUDE = 0.35  # radians (~20 deg) either side of the base projection
 
+# Coplanar facets are merged below this angle. Measured minimum TRUE angle between
+# distinct adjacent facets across all baked frames is ~0.48 deg, so 0.1 deg merges
+# only genuine coplanar triangles. 0.5 deg silently fused two real facets on
+# AssoN6_Proj12 and lost 4 hull vertices — the guard below refuses that now.
+DISSOLVE_ANGLE_DEG = 0.1
+MIN_FACET_ANGLE_DEG = 0.2
+
 ACCENTS = {4: (0.36, 0.95, 0.85), 5: (0.55, 0.78, 1.00), 6: (0.85, 0.62, 1.00)}
 
 
@@ -171,8 +178,22 @@ def hull_mesh(points, dissolve=True):
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     if dissolve:
         bmesh.ops.dissolve_limit(
-            bm, angle_limit=math.radians(0.5), verts=bm.verts[:], edges=bm.edges[:]
+            bm, angle_limit=math.radians(DISSOLVE_ANGLE_DEG), verts=bm.verts[:], edges=bm.edges[:]
         )
+        # Refuse to ship a hull whose facets were fused: any two distinct adjacent
+        # facets must differ by more than the merge threshold.
+        bm.normal_update()
+        from math import degrees
+        for e in bm.edges:
+            if len(e.link_faces) == 2:
+                f1, f2 = e.link_faces
+                if f1.normal.length_squared == 0 or f2.normal.length_squared == 0:
+                    continue
+                ang = degrees(f1.normal.angle(f2.normal))
+                assert ang > MIN_FACET_ANGLE_DEG, (
+                    f"facet merge detected: adjacent facets only {ang:.3f} deg apart "
+                    f"(threshold {MIN_FACET_ANGLE_DEG}). Lower DISSOLVE_ANGLE_DEG."
+                )
     bm.verts.ensure_lookup_table()
     bm.faces.ensure_lookup_table()
     bm.edges.ensure_lookup_table()

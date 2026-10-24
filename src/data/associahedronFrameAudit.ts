@@ -1,22 +1,23 @@
-// Hand-maintained runtime audit of the baked MOD-05 frames. NOT generated.
+// Runtime audit of the baked MOD-05 frames. NOT generated.
 //
-// An independent re-hull of the Loday points (three/examples ConvexHull, exact
-// facet grouping at 1e-7) matches the sidecar for 48 of 49 frames. One does not:
+// History: the first bake merged facets below 0.5°, which silently fused two
+// genuinely distinct facets on AssoN6_Proj12 (0.483° apart) and dropped 4 real
+// vertices — sidecar said V35/E60/F27 where the true hull is V39/E66/F29. An
+// independent re-hull found it; the position-only verifier could not, because
+// the sidecar itself was wrong.
 //
-//   AssoN6_Proj12  sidecar V35 E60 F27  vs  true hull V39 E66 F29
+// Fixed at the source: scripts/generate_v8_associahedron.py now dissolves at
+// 0.1° and refuses to export if any two adjacent facets are closer than 0.2°.
+// The GLB was re-baked and every frame now matches an independent hull.
 //
-// Its smallest adjacent dihedral angle is 0.483°, below the generator's
-// dissolve_limit of 0.5°, so Blender merged two genuinely distinct facets and
-// dropped 4 real vertices. The mesh is therefore NOT a faithful hull, and its
-// sidecar counts are wrong. Until a re-bake (dissolve angle ≤ 0.1°) replaces it,
-// the runtime never shows it and the HUD never reports it: both resolve the
-// sweep through `resolveFrameIndex`, which steps over defective frames.
+// This table stays as a runtime safety net for any future bake regression: list
+// a frame index here and the runtime will never show it nor report its numbers.
 import { ASSOCIAHEDRON_ORDERS, frameIndexFor } from './associahedronInvariants';
 
 export const DEFECTIVE_FRAMES: Readonly<Record<4 | 5 | 6, readonly number[]>> = {
   4: [],
   5: [],
-  6: [12]
+  6: []
 };
 
 /** Sweep → frame index, skipping known-defective frames (nearest valid, ties go up). */
