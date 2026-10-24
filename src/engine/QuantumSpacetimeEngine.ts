@@ -596,7 +596,8 @@ export class QuantumSpacetimeEngine {
     }
 
     if (this.assoHandles.group.visible) {
-      this.assoHandles.update(elapsed, this.state.facetResidueFocus, this.state.projectionSweep);
+      try {
+        this.assoHandles.update(elapsed, this.state.facetResidueFocus, this.state.projectionSweep);
       // the GLB hulls tumble inside the group; during the Director Tour the
       // group adds the same multi-axis tumble as the other four modules
       if (this.isDirectorTourActive) {
@@ -606,7 +607,10 @@ export class QuantumSpacetimeEngine {
         this.assoHandles.group.rotation.x *= 0.9;
         this.assoHandles.group.rotation.z *= 0.9;
       }
-      this.glbArticulator.updateAssociahedronManifold(elapsed, this.state);
+        this.glbArticulator.updateAssociahedronManifold(elapsed, this.state);
+      } catch (err) {
+        (window as unknown as Record<string, unknown>).__assoErr = String(err);
+      }
     }
 
     // Continuous 360° Orbital Crane & Elevation Camera Sweep during Director's Cut Tour

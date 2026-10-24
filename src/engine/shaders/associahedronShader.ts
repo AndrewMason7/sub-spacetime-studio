@@ -100,7 +100,11 @@ export function createAssociahedronScene(): AssociahedronHandles {
   poleRing.name = 'AssociahedronPoleRing';
   poleRing.rotation.x = Math.PI / 2.35;
   poleRing.rotation.z = 0.4;
-  group.add(poleRing);
+  // The pole-emphasis ring was drawn as a 2.06-radius torus around a hull that is
+  // itself ~2.6 units wide: at any framing it read as an orbital cage crossing
+  // the crystal and hiding the facets it was meant to emphasise. Emphasis is now
+  // carried by the material + edge tint in updateAssociahedronManifold only.
+  poleRing.visible = false;
 
   return {
     group,

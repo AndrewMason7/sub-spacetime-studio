@@ -111,6 +111,7 @@ const WorkstationApp: React.FC = () => {
   useEffect(() => {
     if (!viewportRef.current) return;
     const engine = new QuantumSpacetimeEngine(viewportRef.current);
+      (window as unknown as Record<string, unknown>).__engine = engine;
     engineRef.current = engine;
 
     let animId = 0;

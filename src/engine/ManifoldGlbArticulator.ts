@@ -24,7 +24,7 @@ interface AssoFrameRecord {
   mesh: THREE.Mesh;
   material: THREE.MeshPhysicalMaterial;
   wireMaterial: THREE.LineBasicMaterial;
-  nodes: THREE.Points | null;
+  nodes: THREE.InstancedMesh | null;
 }
 
 /** radius the widest hull of each order is fitted to, in host-group units */
@@ -255,23 +255,33 @@ export class ManifoldGlbArticulator {
         const accents: Record<number, number> = { 4: 0x5eead4, 5: 0x93c5fd, 6: 0xd8b4fe };
         const frames = new Map<number, AssoFrameRecord[]>();
 
+        // Only real hull meshes may be processed. InstancedMesh.isMesh is TRUE,
+        // so without this guard the vertex gems added below get traversed as if
+        // they were hulls — each pass adds more gems and the traversal recurses
+        // until the stack overflows (that is how the whole module failed to load).
+        const HULL_NAME = /^AssoN[456](_Proj\d\d)?(_Cage)?$/;
+
         model.traverse((child) => {
           if (!(child as THREE.Mesh).isMesh) return;
           const mesh = child as THREE.Mesh;
+          if (!HULL_NAME.test(mesh.name)) return;
           const order = mesh.name.startsWith('AssoN6') ? 6 : mesh.name.startsWith('AssoN5') ? 5 : 4;
           const accent = accents[order];
           const isCage = mesh.name.includes('_Cage');
 
-          // Solid, lit, low-emissive. The bloom pass thresholds at 0.42 luminance;
-          // a transparent, emissive, clearcoated surface sailed over it and the
-          // crystal rendered as a white blob with no readable facets. Facets must
-          // be shaded by the engine's key/rim lights, not by glow.
-          mesh.material = new THREE.MeshStandardMaterial({
+          // Diffuse-forward dielectric. Metalness + high gloss on a starfield read
+          // as a near-black ghost (measured: object coverage fell 11.9% -> 1.3% of
+          // the viewport), so facets are lit diffusely with a modest self-glow.
+          mesh.material = new THREE.MeshPhysicalMaterial({
             color: isCage ? 0x94a3b8 : accent,
-            emissive: isCage ? 0x1e293b : accent,
-            emissiveIntensity: isCage ? 0.05 : 0.1,
-            metalness: 0.72,
-            roughness: 0.3,
+            emissive: isCage ? 0x0f172a : accent,
+            emissiveIntensity: isCage ? 0.05 : 0.32,
+            metalness: 0.15,
+            roughness: 0.34,
+            clearcoat: 0.65,
+            clearcoatRoughness: 0.18,
+            iridescence: 0.3,
+            iridescenceIOR: 1.25,
             flatShading: true,
             transparent: false,
             depthWrite: true,
@@ -296,17 +306,25 @@ export class ManifoldGlbArticulator {
           wire.name = `${mesh.name}_Wire`;
           mesh.add(wire);
 
-          // Glow nodes sit exactly on the hull's distinct vertex positions — the
-          // real polytope vertices (n=4) or real shadow-hull vertices (n=5/6).
-          let nodes: THREE.Points | null = null;
-          if (this.assoVertexMat) {
-            const nodeGeo = new THREE.BufferGeometry();
-            nodeGeo.setAttribute(
-              'position',
-              new THREE.BufferAttribute(distinctPositions(mesh.geometry), 3)
+          // Vertex markers sit exactly on the hull's distinct vertex positions.
+          // Small instanced octahedra, NOT additive point sprites: the sprites
+          // bloomed into cotton balls that hid the geometry they were marking.
+          let nodes: THREE.InstancedMesh | null = null;
+          const nodePositions = distinctPositions(mesh.geometry);
+          const nodeCount = nodePositions.length / 3;
+          if (nodeCount > 0) {
+            nodes = new THREE.InstancedMesh(
+              new THREE.OctahedronGeometry(0.05, 0),
+              new THREE.MeshBasicMaterial({ color: accent }),
+              nodeCount
             );
-            nodes = new THREE.Points(nodeGeo, this.assoVertexMat);
             nodes.name = `${mesh.name}_Nodes`;
+            const m4 = new THREE.Matrix4();
+            for (let i = 0; i < nodeCount; i++) {
+              m4.makeTranslation(nodePositions[i * 3], nodePositions[i * 3 + 1], nodePositions[i * 3 + 2]);
+              nodes.setMatrixAt(i, m4);
+            }
+            nodes.instanceMatrix.needsUpdate = true;
             mesh.add(nodes);
           }
 
@@ -337,6 +355,8 @@ export class ManifoldGlbArticulator {
               expected: expected.length,
               got: got.length
             });
+            (window as unknown as Record<string, unknown>).__assoMismatch = { expected, got };
+            console.error('[MOD-05] frame/sidecar mismatch', { expected, got });
             this.assoStatus = 'failed';
             disposeObjectTree(model);
             return;
@@ -349,11 +369,21 @@ export class ManifoldGlbArticulator {
           for (const rec of list) {
             rec.mesh.geometry.computeBoundingSphere();
             const bs = rec.mesh.geometry.boundingSphere;
-            if (bs) radius = Math.max(radius, bs.center.length() + bs.radius);
+            // bs.radius alone: center.length() + radius double-counts the offset and
+            // can shrink the object by nearly 2x
+            if (bs) radius = Math.max(radius, bs.radius);
           }
           const scale = radius > 0 ? ASSO_TARGET_RADIUS / radius : 1;
           for (const rec of list) rec.mesh.scale.setScalar(scale);
         }
+
+        // Contained lights: MOD-05 is the only module whose surface depends on
+        // diffuse shading. Scoped to the group so no other module changes.
+        const fill = new THREE.PointLight(0xe0f2fe, 18, 26, 2);
+        fill.position.set(2.5, 3.2, 6.0);
+        const rim = new THREE.PointLight(0xa78bfa, 10, 26, 2);
+        rim.position.set(-4.0, -2.5, -4.0);
+        model.add(fill, rim);
 
         this.assoFrames = frames;
         this.assoGlbGroup = model;
@@ -363,6 +393,7 @@ export class ManifoldGlbArticulator {
       undefined,
       (err) => {
         this.assoStatus = 'failed';
+        (window as unknown as Record<string, unknown>).__assoErr = String(err && (err as Error).message || err);
         logLoadFailure('associahedron.glb', err);
       }
     );
@@ -404,7 +435,7 @@ export class ManifoldGlbArticulator {
     // The GLB carries no facet ids, so no single facet is selected (deferred).
     const active = frames[idx];
     const focus = state.facetResidueFocus;
-    active.material.emissiveIntensity = 0.08 + focus * 0.16 + 0.03 * Math.sin(elapsed * 3.2);
+    active.material.emissiveIntensity = 0.30 + focus * 0.22 + 0.03 * Math.sin(elapsed * 3.2);
     active.wireMaterial.opacity = 0.35 + focus * 0.45;
   }
 
