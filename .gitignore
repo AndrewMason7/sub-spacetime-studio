@@ -6,3 +6,6 @@ dist/
 .env.*
 public/*.mp4
 .agents/
+# npm is the canonical package manager — keep bun's lockfile out of the tree
+bun.lock
+bun.lockb

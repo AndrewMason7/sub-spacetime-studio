@@ -9,6 +9,10 @@
     "url": "https://github.com/AndrewMason7/sub-spacetime-studio.git"
   },
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",

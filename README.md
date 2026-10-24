@@ -291,7 +291,7 @@ The left instrument rack features:
 ## 7. Getting Started & Reproducing the Pipeline
 
 ### Prerequisites
-- **Node.js** (`>= 20.0.0`) or **[Bun](https://bun.sh/)** (`>= 1.1.0`)
+- **Node.js** (`>= 20.0.0`) with npm (`>= 10`)
 - Modern WebGL2-compatible browser (Chrome, Edge, Firefox, Safari 16+)
 - *(Optional, for regenerating `.glb` models)* **[Blender 5.2 LTS](https://www.blender.org/)** with Python `numpy` and `scipy`
 - *(Optional, for regenerating audio)* Python 3.10+ with `numpy`
@@ -303,13 +303,12 @@ The left instrument rack features:
 git clone https://github.com/AndrewMason7/sub-spacetime-studio.git
 cd sub-spacetime-studio
 
-# 2. Install dependencies (via npm or bun)
-npm install
-# or: bun install
+# 2. Install dependencies (npm is the canonical package manager)
+npm ci          # reproducible install from package-lock.json
+# npm install   # if you intentionally want to resolve newer semver-compatible versions
 
 # 3. Start the local development server (runs on port 3000)
 npm run dev
-# or: bun run dev
 
 # 4. Open in your browser
 # http://localhost:3000
