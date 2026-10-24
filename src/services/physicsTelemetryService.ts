@@ -72,6 +72,7 @@ export function resolveActiveAstFocus(
         phaseNote: `Replica Wormhole Island Coupling α_QES = ${(uniforms?.wormholeCoupling ?? 1.0).toFixed(2)}`
       };
     }
+    // Slider 2: manifoldMorph (0 = S⁴ -> LN 18, 1 = ℂℙ² -> LN 19, 2 = ℝℙ⁴ -> LN 20)
     const morph = uniforms?.manifoldMorph ?? 0.65;
     if (morph < 0.5) {
       return {
@@ -302,6 +303,9 @@ export function resolveActiveAstFocus(
   };
 }
 
+/**
+ * Legacy helper kept for compatibility: resolves the primary line index
+ */
 export function resolveActiveAstLine(
   fileId: string,
   sliderIdx: number | null | undefined,
@@ -312,6 +316,9 @@ export function resolveActiveAstLine(
   return resolveActiveAstFocus(fileId, sliderIdx, uniforms, maxLines).lineIdx;
 }
 
+/**
+ * Computes exact physical & topological invariants for the 3D Viewport HUD
+ */
 export function computeViewportTelemetry(
   activeMode: SceneModeId,
   uniforms: SimulationUniformState
@@ -373,6 +380,9 @@ export function computeViewportTelemetry(
   };
 }
 
+/**
+ * Computes real-time cathode-ray oscilloscope waveform sample from current physics state
+ */
 export function computeOscilloscopeSample(
   activeMode: SceneModeId,
   uniforms: SimulationUniformState,
@@ -415,6 +425,9 @@ export function computeOscilloscopeSample(
   return { sample, traceColor };
 }
 
+/**
+ * Returns the contextual quick-trigger button label and alert state for the Left Parameter Rack
+ */
 export function getQuickActionSpec(
   activeMode: SceneModeId,
   uniforms: SimulationUniformState
