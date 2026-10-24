@@ -5,11 +5,14 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
-    port: 3000
+    port: 3000,
+    // served through the Cloudflare tunnel; Vite rejects unknown Host headers
+    allowedHosts: ['.clipboard-share.com']
   },
   preview: {
     host: '0.0.0.0',
-    port: 3000
+    port: 3000,
+    allowedHosts: ['.clipboard-share.com']
   },
   build: {
     chunkSizeWarningLimit: 700,
