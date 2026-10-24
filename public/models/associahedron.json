@@ -1,0 +1,498 @@
+{
+  "generator": "scripts/generate_v8_associahedron.py",
+  "blenderVersion": "5.2.3 LTS",
+  "realization": "Loday: x_i = leaves_left(i) * leaves_right(i), in-order labelling",
+  "sweepFrames": 24,
+  "sweepAmplitudeRad": 0.35,
+  "orders": [
+    {
+      "order": 4,
+      "combinatorialVertices": 14,
+      "coordinateSum": 10,
+      "ambientDim": 4,
+      "affineDim": 3,
+      "projected": false,
+      "isometryMaxError": 1.7763568394002505e-15,
+      "sweepFrames": 0,
+      "root": "AssoN4",
+      "frames": [
+        {
+          "mesh": "AssoN4",
+          "wire": "AssoN4_Wire",
+          "V": 14,
+          "E": 21,
+          "F": 9,
+          "euler": 2
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "combinatorialVertices": 42,
+      "coordinateSum": 15,
+      "ambientDim": 5,
+      "affineDim": 4,
+      "projected": true,
+      "isometryMaxError": null,
+      "sweepFrames": 24,
+      "sweepAmplitudeRad": 0.35,
+      "root": "AssoN5",
+      "hullRange": {
+        "minV": 27,
+        "maxV": 31
+      },
+      "frames": [
+        {
+          "mesh": "AssoN5_Proj00",
+          "wire": "AssoN5_Proj00_Wire",
+          "angleRad": -0.35,
+          "V": 31,
+          "E": 52,
+          "F": 23,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj01",
+          "wire": "AssoN5_Proj01_Wire",
+          "angleRad": -0.31956521739130433,
+          "V": 31,
+          "E": 52,
+          "F": 23,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj02",
+          "wire": "AssoN5_Proj02_Wire",
+          "angleRad": -0.2891304347826087,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj03",
+          "wire": "AssoN5_Proj03_Wire",
+          "angleRad": -0.25869565217391305,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj04",
+          "wire": "AssoN5_Proj04_Wire",
+          "angleRad": -0.22826086956521738,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj05",
+          "wire": "AssoN5_Proj05_Wire",
+          "angleRad": -0.1978260869565217,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj06",
+          "wire": "AssoN5_Proj06_Wire",
+          "angleRad": -0.1673913043478261,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj07",
+          "wire": "AssoN5_Proj07_Wire",
+          "angleRad": -0.13695652173913045,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj08",
+          "wire": "AssoN5_Proj08_Wire",
+          "angleRad": -0.10652173913043478,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj09",
+          "wire": "AssoN5_Proj09_Wire",
+          "angleRad": -0.07608695652173914,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj10",
+          "wire": "AssoN5_Proj10_Wire",
+          "angleRad": -0.04565217391304344,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj11",
+          "wire": "AssoN5_Proj11_Wire",
+          "angleRad": -0.01521739130434785,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj12",
+          "wire": "AssoN5_Proj12_Wire",
+          "angleRad": 0.015217391304347794,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj13",
+          "wire": "AssoN5_Proj13_Wire",
+          "angleRad": 0.04565217391304349,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj14",
+          "wire": "AssoN5_Proj14_Wire",
+          "angleRad": 0.07608695652173908,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj15",
+          "wire": "AssoN5_Proj15_Wire",
+          "angleRad": 0.10652173913043478,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj16",
+          "wire": "AssoN5_Proj16_Wire",
+          "angleRad": 0.13695652173913042,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj17",
+          "wire": "AssoN5_Proj17_Wire",
+          "angleRad": 0.167391304347826,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj18",
+          "wire": "AssoN5_Proj18_Wire",
+          "angleRad": 0.1978260869565217,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj19",
+          "wire": "AssoN5_Proj19_Wire",
+          "angleRad": 0.2282608695652174,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj20",
+          "wire": "AssoN5_Proj20_Wire",
+          "angleRad": 0.2586956521739131,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj21",
+          "wire": "AssoN5_Proj21_Wire",
+          "angleRad": 0.2891304347826087,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj22",
+          "wire": "AssoN5_Proj22_Wire",
+          "angleRad": 0.3195652173913043,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN5_Proj23",
+          "wire": "AssoN5_Proj23_Wire",
+          "angleRad": 0.35,
+          "V": 27,
+          "E": 45,
+          "F": 20,
+          "euler": 2
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "combinatorialVertices": 132,
+      "coordinateSum": 21,
+      "ambientDim": 6,
+      "affineDim": 5,
+      "projected": true,
+      "isometryMaxError": null,
+      "sweepFrames": 24,
+      "sweepAmplitudeRad": 0.35,
+      "root": "AssoN6",
+      "hullRange": {
+        "minV": 32,
+        "maxV": 39
+      },
+      "frames": [
+        {
+          "mesh": "AssoN6_Proj00",
+          "wire": "AssoN6_Proj00_Wire",
+          "angleRad": -0.35,
+          "V": 36,
+          "E": 60,
+          "F": 26,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj01",
+          "wire": "AssoN6_Proj01_Wire",
+          "angleRad": -0.31956521739130433,
+          "V": 36,
+          "E": 60,
+          "F": 26,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj02",
+          "wire": "AssoN6_Proj02_Wire",
+          "angleRad": -0.2891304347826087,
+          "V": 32,
+          "E": 53,
+          "F": 23,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj03",
+          "wire": "AssoN6_Proj03_Wire",
+          "angleRad": -0.25869565217391305,
+          "V": 32,
+          "E": 53,
+          "F": 23,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj04",
+          "wire": "AssoN6_Proj04_Wire",
+          "angleRad": -0.22826086956521738,
+          "V": 32,
+          "E": 53,
+          "F": 23,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj05",
+          "wire": "AssoN6_Proj05_Wire",
+          "angleRad": -0.1978260869565217,
+          "V": 32,
+          "E": 53,
+          "F": 23,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj06",
+          "wire": "AssoN6_Proj06_Wire",
+          "angleRad": -0.1673913043478261,
+          "V": 32,
+          "E": 53,
+          "F": 23,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj07",
+          "wire": "AssoN6_Proj07_Wire",
+          "angleRad": -0.13695652173913045,
+          "V": 32,
+          "E": 53,
+          "F": 23,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj08",
+          "wire": "AssoN6_Proj08_Wire",
+          "angleRad": -0.10652173913043478,
+          "V": 32,
+          "E": 53,
+          "F": 23,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj09",
+          "wire": "AssoN6_Proj09_Wire",
+          "angleRad": -0.07608695652173914,
+          "V": 32,
+          "E": 53,
+          "F": 23,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj10",
+          "wire": "AssoN6_Proj10_Wire",
+          "angleRad": -0.04565217391304344,
+          "V": 32,
+          "E": 53,
+          "F": 23,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj11",
+          "wire": "AssoN6_Proj11_Wire",
+          "angleRad": -0.01521739130434785,
+          "V": 32,
+          "E": 53,
+          "F": 23,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj12",
+          "wire": "AssoN6_Proj12_Wire",
+          "angleRad": 0.015217391304347794,
+          "V": 35,
+          "E": 60,
+          "F": 27,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj13",
+          "wire": "AssoN6_Proj13_Wire",
+          "angleRad": 0.04565217391304349,
+          "V": 39,
+          "E": 66,
+          "F": 29,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj14",
+          "wire": "AssoN6_Proj14_Wire",
+          "angleRad": 0.07608695652173908,
+          "V": 39,
+          "E": 66,
+          "F": 29,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj15",
+          "wire": "AssoN6_Proj15_Wire",
+          "angleRad": 0.10652173913043478,
+          "V": 39,
+          "E": 66,
+          "F": 29,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj16",
+          "wire": "AssoN6_Proj16_Wire",
+          "angleRad": 0.13695652173913042,
+          "V": 39,
+          "E": 66,
+          "F": 29,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj17",
+          "wire": "AssoN6_Proj17_Wire",
+          "angleRad": 0.167391304347826,
+          "V": 39,
+          "E": 66,
+          "F": 29,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj18",
+          "wire": "AssoN6_Proj18_Wire",
+          "angleRad": 0.1978260869565217,
+          "V": 39,
+          "E": 66,
+          "F": 29,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj19",
+          "wire": "AssoN6_Proj19_Wire",
+          "angleRad": 0.2282608695652174,
+          "V": 39,
+          "E": 66,
+          "F": 29,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj20",
+          "wire": "AssoN6_Proj20_Wire",
+          "angleRad": 0.2586956521739131,
+          "V": 39,
+          "E": 66,
+          "F": 29,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj21",
+          "wire": "AssoN6_Proj21_Wire",
+          "angleRad": 0.2891304347826087,
+          "V": 39,
+          "E": 66,
+          "F": 29,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj22",
+          "wire": "AssoN6_Proj22_Wire",
+          "angleRad": 0.3195652173913043,
+          "V": 39,
+          "E": 66,
+          "F": 29,
+          "euler": 2
+        },
+        {
+          "mesh": "AssoN6_Proj23",
+          "wire": "AssoN6_Proj23_Wire",
+          "angleRad": 0.35,
+          "V": 39,
+          "E": 66,
+          "F": 29,
+          "euler": 2
+        }
+      ]
+    }
+  ]
+}
