@@ -362,6 +362,9 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                     max={s.max}
                     step={s.step}
                     value={val}
+                    aria-label={s.label}
+                    aria-valuetext={`${s.label}: ${val.toFixed(2)}${s.unit ? ` ${s.unit}` : ''}`}
+                    aria-describedby={`slider-caption-${s.id}`}
                     onChange={(e) => {
                       onHoverOrScrubSlider?.(sIdx);
                       onChangeUniform(s.id, parseFloat(e.target.value));
@@ -381,7 +384,9 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                   <span>{s.max.toFixed(1)}</span>
                 </div>
 
-                <div className="scrubber-caption">{s.description}</div>
+                <div className="scrubber-caption" id={`slider-caption-${s.id}`}>
+                  {s.description}
+                </div>
               </div>
             );
           })}

@@ -1,5 +1,6 @@
 import { SceneModeId, SimulationUniformState } from '../types/workstation';
-import { clampOrder, invariantsFor } from '../data/associahedronInvariants';
+import { clampOrder } from '../data/associahedronInvariants';
+import { auditedInvariantsFor } from '../data/associahedronFrameAudit';
 
 export interface ViewportTelemetryReadout {
   invariantStr: string;
@@ -49,7 +50,7 @@ export function resolveActiveAstFocus(
 
   if (fileId === 'associahedron-lean') {
     const order = clampOrder(uniforms?.associahedronOrder ?? 4);
-    const inv = invariantsFor(order, uniforms?.projectionSweep ?? 0.5);
+    const inv = auditedInvariantsFor(order, uniforms?.projectionSweep ?? 0.5);
     const focus = uniforms?.facetResidueFocus ?? 0.15;
     if (sIdx === 0) {
       return {
@@ -74,7 +75,7 @@ export function resolveActiveAstFocus(
       endLineIdx: clamp(48),
       symbolToken: 'n4_isometric_embedding',
       phaseNote: inv.projected
-        ? `Pole focus Ω = ${focus.toFixed(2)} — facet residues of the canonical form`
+        ? `Pole emphasis Ω = ${focus.toFixed(2)} — global emphasis; per-facet residue selection deferred`
         : `Isometry error ${(inv.isometryMaxError ?? 0).toExponential(1)} — no projection in play`
     };
   }
@@ -402,13 +403,13 @@ export function computeViewportTelemetry(
   }
 
   if (activeMode === 'associahedron') {
-    const inv = invariantsFor(clampOrder(uniforms.associahedronOrder), uniforms.projectionSweep);
+    const inv = auditedInvariantsFor(clampOrder(uniforms.associahedronOrder), uniforms.projectionSweep);
     return {
       invariantStr: `V = ${inv.frame.V} // E = ${inv.frame.E} // F = ${inv.frame.F} // χ = ${inv.frame.euler}`,
       topologyStr: inv.projected
         ? `PROJECTED n=${inv.order} — ${inv.combinatorialVertices} pts → 3D shadow`
-        : `EXACT 3D n=${inv.order} — isometric (1.8e-15)`,
-      glbMeshName: 'associahedron.glb (1 exact + 48 hulls)'
+        : `EXACT 3D n=${inv.order} — isometric (${(inv.isometryMaxError ?? 0).toExponential(1)})`,
+      glbMeshName: `associahedron.glb (frame ${inv.frame.mesh})`
     };
   }
 
@@ -457,7 +458,7 @@ export function computeOscilloscopeSample(
         Math.min(1, uniforms.bondiMass / 2.2) +
       Math.cos(t * 9.0) * 0.07 * (uniforms.boundaryQubitFlux / 2.5);
   } else if (activeMode === 'associahedron') {
-    const inv = invariantsFor(clampOrder(uniforms.associahedronOrder), uniforms.projectionSweep);
+    const inv = auditedInvariantsFor(clampOrder(uniforms.associahedronOrder), uniforms.projectionSweep);
     const focus = uniforms.facetResidueFocus;
     // one pulse per facet of the displayed hull — the trace literally counts faces
     sample =

@@ -63,7 +63,8 @@ const TOUR_ACT_LABELS = [
   'ACT I · M01',
   'ACT II · M02',
   'ACT III · M03',
-  'ACT IV · M04'
+  'ACT IV · M04',
+  'ACT V · M05'
 ];
 
 export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({

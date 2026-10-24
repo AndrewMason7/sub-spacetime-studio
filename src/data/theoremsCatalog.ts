@@ -265,11 +265,11 @@ export const THEOREM_SCENES: Record<SceneModeId, TheoremMetadata> = {
     realWorldAnalogy:
       'Every module before this one renders a metaphor: a torus knot standing in for a retraction, a shader sphere standing in for a Hilbert state. This one does not. The 14 nodes you are rotating are the 14 ways to chop a hexagon into triangles, written down as exact integers by Loday in 2004. Nothing was sculpted — the crystallography IS the combinatorics.',
     formalSummary:
-      'Vertices correspond to plane binary trees with n internal nodes (equivalently, triangulations of an (n+2)-gon). Labelling internal nodes in-order, vertex i receives coordinate (leaves in its left subtree)·(leaves in its right subtree). Every vertex satisfies Σ x_i = n(n+1)/2, so the polytope is (n−1)-dimensional inside that hyperplane. At n = 4 the hyperplane is 3-dimensional, so the embedding into the viewport is an isometry (measured max distortion 1.8e-15). The canonical form of this polytope — its "volume" in the positive-geometry sense — is the bi-adjoint φ³ scattering amplitude; each facet is a pole of that form.',
+      'Vertices correspond to plane binary trees with n internal nodes (equivalently, triangulations of an (n+2)-gon). Labelling internal nodes in-order, vertex i receives coordinate (leaves in its left subtree)·(leaves in its right subtree). Every vertex satisfies Σ x_i = n(n+1)/2, so the polytope is (n−1)-dimensional inside that hyperplane. At n = 4 the hyperplane is 3-dimensional, so the embedding into the viewport is an isometry up to one uniform display scale (max distortion 1.8e-15 in the float64 bake, ≤ 2e-7 after float32 GLB export). The canonical form of this polytope — its "volume" in the positive-geometry sense — is the bi-adjoint φ³ scattering amplitude; each facet is a pole of that form.',
     latexPrimary:
       'x_i(T) = L_i\\(T) \\cdot R_i\\(T), \\qquad \\sum_{i=1}^{n} x_i = \\tfrac{n(n+1)}{2}',
     latexSecondary:
-      '\\#\\text{vertices} = C_n = \\tfrac{1}{n+1}\\binom{2n}{n} \\;\\big|\\; \\#\\text{facets} = \\tfrac{(n+2)(n-1)}{2} \\;\\big|\\; \\text{n=4: } V14\\;E21\\;F9\\\\;\\chi=2',
+      '\\#\\text{vertices} = C_n = \\tfrac{1}{n+1}\\binom{2n}{n} \\;\\big|\\; \\#\\text{facets} = \\tfrac{(n+2)(n-1)}{2} \\;\\big|\\; \\text{n=4: } V14\\;E21\\;F9\\;\\chi=2',
     auditScopeNote:
       'SCALPEL AUDIT: this module is NOT part of openai/math and carries no Lean verification. Geometry is exact (integer coordinates, asserted at bake time, re-verified from the shipped GLB); the Lean file in the IDE is an explicit scaffold with sorry. The n = 5 and n = 6 views are 4D/5D shadows: their hull vertex counts change with projection angle, which is why the sweep is baked as 24 true hulls instead of a morph.',
     argonPipelineStats: {
@@ -305,14 +305,14 @@ export const THEOREM_SCENES: Record<SceneModeId, TheoremMetadata> = {
       },
       {
         id: 'facetResidueFocus',
-        label: 'Canonical-Form Pole Focus',
+        label: 'Canonical-Form Pole Emphasis',
         symbol: '\\Omega',
         min: 0.0,
         max: 1.0,
         step: 0.01,
         defaultValue: 0.15,
         description:
-          'Sweeps the highlighted facet: each face is a pole of the canonical form, and the form’s residue there is a φ³ partial amplitude.'
+          'Global emphasis on the facet lattice (glow + edge intensity) and the scan ring. Each facet is a pole of the canonical form whose residue is a φ³ partial amplitude — but this slider does NOT yet select an individual facet; per-facet selection is deferred.'
       }
     ]
   }

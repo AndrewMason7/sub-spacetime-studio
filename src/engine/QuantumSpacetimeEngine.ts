@@ -257,7 +257,8 @@ export class QuantumSpacetimeEngine {
       fkcrtGroup: this.fkcrtHandles.group,
       willowGroup: this.willowHandles.group,
       k3Group: this.k3Handles.group,
-      associahedronGroup: this.assoHandles.group
+      associahedronGroup: this.assoHandles.group,
+      associahedronVertexMat: this.assoHandles.vertexMat
     });
   }
 
@@ -402,7 +403,8 @@ export class QuantumSpacetimeEngine {
         this.observerHandles.group,
         this.fkcrtHandles.group,
         this.willowHandles.group,
-        this.k3Handles.group
+        this.k3Handles.group,
+        this.assoHandles.group
       ];
       for (const g of groups) {
         g.rotation.x = 0;
@@ -595,8 +597,15 @@ export class QuantumSpacetimeEngine {
 
     if (this.assoHandles.group.visible) {
       this.assoHandles.update(elapsed, this.state.facetResidueFocus, this.state.projectionSweep);
-      // the GLB hulls tumble inside the group; the group itself stays put so the
-      // baked facet normals keep sweeping the bloom pass
+      // the GLB hulls tumble inside the group; during the Director Tour the
+      // group adds the same multi-axis tumble as the other four modules
+      if (this.isDirectorTourActive) {
+        this.assoHandles.group.rotation.x = Math.sin(this.directorTourTime * 0.8) * 0.6;
+        this.assoHandles.group.rotation.z = Math.cos(this.directorTourTime * 0.56) * 0.42;
+      } else {
+        this.assoHandles.group.rotation.x *= 0.9;
+        this.assoHandles.group.rotation.z *= 0.9;
+      }
       this.glbArticulator.updateAssociahedronManifold(elapsed, this.state);
     }
 

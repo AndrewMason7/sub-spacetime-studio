@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { SimulationUniformState } from '../types/workstation';
-import { clampOrder, frameIndexFor } from '../data/associahedronInvariants';
+import {
+  ASSOCIAHEDRON_ORDERS,
+  ASSOCIAHEDRON_ORDERS_LIST,
+  clampOrder
+} from '../data/associahedronInvariants';
+import { resolveFrameIndex } from '../data/associahedronFrameAudit';
 
 export interface ManifoldHostGroups {
   observerGroup: THREE.Group;
@@ -9,6 +14,62 @@ export interface ManifoldHostGroups {
   willowGroup: THREE.Group;
   k3Group: THREE.Group;
   associahedronGroup: THREE.Group;
+  /** shared glow material for MOD-05 hull-vertex nodes (owned by the scene module) */
+  associahedronVertexMat?: THREE.ShaderMaterial;
+}
+
+export type AssetStatus = 'idle' | 'loading' | 'ready' | 'failed';
+
+interface AssoFrameRecord {
+  mesh: THREE.Mesh;
+  material: THREE.MeshPhysicalMaterial;
+  wireMaterial: THREE.LineBasicMaterial;
+  nodes: THREE.Points | null;
+}
+
+/** radius the widest hull of each order is fitted to, in host-group units */
+const ASSO_TARGET_RADIUS = 2.15;
+const ASSO_EDGE_THRESHOLD_DEG = 0.2;
+
+function logLoadFailure(asset: string, err: unknown): void {
+  console.warn('[ManifoldGlbArticulator] GLB load failed; module falls back to its shader stage', {
+    asset,
+    error: err instanceof Error ? err.message : String(err)
+  });
+}
+
+/** Distinct vertex positions of a (flat-shaded, corner-split) geometry. */
+function distinctPositions(geometry: THREE.BufferGeometry): Float32Array {
+  const pos = geometry.attributes.position;
+  const seen = new Set<string>();
+  const out: number[] = [];
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const k = `${x.toFixed(4)},${y.toFixed(4)},${z.toFixed(4)}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(x, y, z);
+  }
+  return new Float32Array(out);
+}
+
+/**
+ * Releases every geometry and material under `root` — Meshes AND the
+ * runtime-created LineSegments / Points. Shared materials passed in by a scene
+ * module are skipped via `keep`, since their owner disposes them.
+ */
+function disposeObjectTree(root: THREE.Object3D, keep?: Set<THREE.Material>): void {
+  root.traverse((obj) => {
+    const drawable = obj as THREE.Mesh | THREE.LineSegments | THREE.Points;
+    drawable.geometry?.dispose();
+    const mat = drawable.material;
+    if (!mat) return;
+    for (const m of Array.isArray(mat) ? mat : [mat]) {
+      if (!keep?.has(m)) m.dispose();
+    }
+  });
 }
 
 const HOPF_HARMONIC_RATIOS = [1.0, -1.5, 2.0, -2.5, 3.0];
@@ -28,12 +89,15 @@ export class ManifoldGlbArticulator {
   private k3GlbGroup: THREE.Group | null = null;
   private assoGlbGroup: THREE.Group | null = null;
   /** order -> frames (one true hull per projection angle); n=4 has a single frame */
-  private assoFrames: Map<number, THREE.Mesh[]> = new Map();
+  private assoFrames: Map<number, AssoFrameRecord[]> = new Map();
   private assoActiveKey = '';
+  private assoStatus: AssetStatus = 'idle';
+  private assoVertexMat: THREE.ShaderMaterial | null = null;
   private disposed = false;
 
   public loadAllManifolds(hosts: ManifoldHostGroups): void {
     const loader = new GLTFLoader();
+    this.assoVertexMat = hosts.associahedronVertexMat ?? null;
 
     // 1. M01: F348 Einstein 4-Saddle + CliffordCore (ShapeKey: Singularity_Collapse) + 5 Hopf Villarceau Rings
     loader.load(
@@ -67,7 +131,7 @@ export class ManifoldGlbArticulator {
         hosts.observerGroup.add(model);
       },
       undefined,
-      () => {}
+      (err) => logLoadFailure('einstein_saddle.glb', err)
     );
 
     // 2. M02: FKCRT LQG Sphere (ShapeKey: Fractal_Roughness) + 6 Aldous CRT Spines
@@ -102,7 +166,7 @@ export class ManifoldGlbArticulator {
         hosts.fkcrtGroup.add(model);
       },
       undefined,
-      () => {}
+      (err) => logLoadFailure('fkcrt_manifold.glb', err)
     );
 
     // 3. M03: CKS Kerr Funnel + KerrErgosphere (ShapeKey: Ergo_Bulge) + PhotonRing3M
@@ -139,7 +203,7 @@ export class ManifoldGlbArticulator {
         hosts.willowGroup.add(model);
       },
       undefined,
-      () => {}
+      (err) => logLoadFailure('cks_horizon_funnel.glb', err)
     );
 
     // 4. M04: K3 Calabi-Yau Fermat Quintic (ShapeKey: Cusp_Shatter) + 2 Cusp Loci
@@ -174,34 +238,22 @@ export class ManifoldGlbArticulator {
         hosts.k3Group.add(model);
       },
       undefined,
-      () => {}
+      (err) => logLoadFailure('k3_calabi_yau.glb', err)
     );
 
     // 5. M05: Associahedron (Loday realization) — baked as 1 exact hull for n=4
     // and 24 independently hulled projections each for n=5 / n=6.
+    this.assoStatus = 'loading';
     loader.load(
       '/models/associahedron.glb?v=v8',
       (gltf) => {
-        if (this.disposed) return;
+        if (this.disposed) {
+          disposeObjectTree(gltf.scene);
+          return;
+        }
         const model = gltf.scene;
         const accents: Record<number, number> = { 4: 0x5eead4, 5: 0x93c5fd, 6: 0xd8b4fe };
-
-        const addWire = (mesh: THREE.Mesh, color: number) => {
-          // glTF cannot carry edge-only meshes, so the lattice is generated here.
-          const edges = new THREE.EdgesGeometry(mesh.geometry, 1);
-          const wire = new THREE.LineSegments(
-            edges,
-            new THREE.LineBasicMaterial({
-              color,
-              transparent: true,
-              opacity: 0.55,
-              blending: THREE.AdditiveBlending,
-              depthWrite: false
-            })
-          );
-          wire.name = `${mesh.name}_Wire`;
-          mesh.add(wire);
-        };
+        const frames = new Map<number, AssoFrameRecord[]>();
 
         model.traverse((child) => {
           if (!(child as THREE.Mesh).isMesh) return;
@@ -225,37 +277,108 @@ export class ManifoldGlbArticulator {
             depthWrite: false,
             opacity: isCage ? 0.25 : 0.92
           });
+          mesh.visible = false;
+          if (isCage) return; // exactness reference only, never rendered
 
-          if (isCage) {
-            mesh.visible = false; // exactness reference only, never rendered
-            return;
+          // glTF cannot carry edge-only meshes, so the lattice is generated here.
+          // 0.2° (not 1°) so near-flat ridges of the projected hulls are kept:
+          // at 1° EdgesGeometry silently dropped real edges on 5 frames.
+          const wire = new THREE.LineSegments(
+            new THREE.EdgesGeometry(mesh.geometry, ASSO_EDGE_THRESHOLD_DEG),
+            new THREE.LineBasicMaterial({
+              color: accent,
+              transparent: true,
+              opacity: 0.55,
+              blending: THREE.AdditiveBlending,
+              depthWrite: false
+            })
+          );
+          wire.name = `${mesh.name}_Wire`;
+          mesh.add(wire);
+
+          // Glow nodes sit exactly on the hull's distinct vertex positions — the
+          // real polytope vertices (n=4) or real shadow-hull vertices (n=5/6).
+          let nodes: THREE.Points | null = null;
+          if (this.assoVertexMat) {
+            const nodeGeo = new THREE.BufferGeometry();
+            nodeGeo.setAttribute(
+              'position',
+              new THREE.BufferAttribute(distinctPositions(mesh.geometry), 3)
+            );
+            nodes = new THREE.Points(nodeGeo, this.assoVertexMat);
+            nodes.name = `${mesh.name}_Nodes`;
+            mesh.add(nodes);
           }
 
-          addWire(mesh, accent);
-          mesh.visible = false;
-          const list = this.assoFrames.get(order) ?? [];
-          list.push(mesh);
-          this.assoFrames.set(order, list);
+          const list = frames.get(order) ?? [];
+          list.push({
+            mesh,
+            material: mesh.material as THREE.MeshPhysicalMaterial,
+            wireMaterial: wire.material as THREE.LineBasicMaterial,
+            nodes
+          });
+          frames.set(order, list);
         });
 
         // frames must be ordered by index, not by traversal order
-        for (const [order, list] of this.assoFrames) {
-          list.sort((a, b) => a.name.localeCompare(b.name));
-          this.assoFrames.set(order, list);
+        for (const list of frames.values()) {
+          list.sort((a, b) => a.mesh.name.localeCompare(b.mesh.name));
         }
 
+        // Fail loudly-but-safely if the asset and the sidecar disagree: frame
+        // selection is index-based, so a count mismatch would desynchronise the
+        // HUD numbers from the mesh on screen.
+        for (const order of ASSOCIAHEDRON_ORDERS_LIST) {
+          const expected = ASSOCIAHEDRON_ORDERS[order].frames.map((f) => f.mesh);
+          const got = (frames.get(order) ?? []).map((r) => r.mesh.name);
+          if (expected.length !== got.length || expected.some((name, i) => name !== got[i])) {
+            console.warn('[ManifoldGlbArticulator] MOD-05 GLB/sidecar frame mismatch; module disabled', {
+              order,
+              expected: expected.length,
+              got: got.length
+            });
+            this.assoStatus = 'failed';
+            disposeObjectTree(model);
+            return;
+          }
+          // One uniform scale per ORDER (never per frame, so the sweep does not
+          // breathe): fit the order's widest hull into the shared optical sphere.
+          // Uniform scaling is a similarity, so n=4 stays isometric up to scale.
+          const list = frames.get(order) ?? [];
+          let radius = 0;
+          for (const rec of list) {
+            rec.mesh.geometry.computeBoundingSphere();
+            const bs = rec.mesh.geometry.boundingSphere;
+            if (bs) radius = Math.max(radius, bs.center.length() + bs.radius);
+          }
+          const scale = radius > 0 ? ASSO_TARGET_RADIUS / radius : 1;
+          for (const rec of list) rec.mesh.scale.setScalar(scale);
+        }
+
+        this.assoFrames = frames;
         this.assoGlbGroup = model;
+        this.assoStatus = 'ready';
         hosts.associahedronGroup.add(model);
       },
       undefined,
-      () => {}
+      (err) => {
+        this.assoStatus = 'failed';
+        logLoadFailure('associahedron.glb', err);
+      }
     );
+  }
+
+  /** Lifecycle of the MOD-05 asset, so callers can degrade instead of guessing. */
+  public getAssociahedronStatus(): AssetStatus {
+    return this.assoStatus;
   }
 
   /**
    * MOD-05: shows exactly one baked hull — the exact n=4 cage, or the n=5/6
    * hull whose projection angle matches the sweep slider. Every frame shown is
-   * a true convex hull; nothing is morphed between different topologies.
+   * a true convex hull; nothing is morphed between different topologies. Frame
+   * choice goes through `resolveFrameIndex`, the same resolver the HUD uses, so
+   * the V/E/F readout always describes the mesh on screen.
    */
   public updateAssociahedronManifold(elapsed: number, state: SimulationUniformState): void {
     if (!this.assoGlbGroup) return;
@@ -263,12 +386,12 @@ export class ManifoldGlbArticulator {
     const frames = this.assoFrames.get(order);
     if (!frames || frames.length === 0) return;
 
-    const idx = frameIndexFor(state.projectionSweep, order);
+    const idx = Math.min(frames.length - 1, resolveFrameIndex(state.projectionSweep, order));
     const key = `${order}:${idx}`;
     if (key !== this.assoActiveKey) {
       for (const [o, list] of this.assoFrames) {
-        list.forEach((mesh, i) => {
-          mesh.visible = o === order && i === idx;
+        list.forEach((rec, i) => {
+          rec.mesh.visible = o === order && i === idx;
         });
       }
       this.assoActiveKey = key;
@@ -277,21 +400,12 @@ export class ManifoldGlbArticulator {
     this.assoGlbGroup.rotation.y = elapsed * 0.22;
     this.assoGlbGroup.rotation.x = Math.sin(elapsed * 0.31) * 0.18;
 
+    // Global emphasis only: the focus slider brightens the whole active hull.
+    // The GLB carries no facet ids, so no single facet is selected (deferred).
     const active = frames[idx];
     const focus = state.facetResidueFocus;
-    active.traverse((child) => {
-      if (!(child as THREE.Mesh).isMesh) return;
-      const mat = (child as THREE.Mesh).material as THREE.MeshPhysicalMaterial;
-      if (mat && typeof mat.emissiveIntensity === 'number') {
-        mat.emissiveIntensity = 0.55 + focus * 0.85 + 0.12 * Math.sin(elapsed * 3.2);
-      }
-      const wire = child.children.find((c) => (c as THREE.LineSegments).isLineSegments) as
-        | THREE.LineSegments
-        | undefined;
-      if (wire) {
-        (wire.material as THREE.LineBasicMaterial).opacity = 0.35 + focus * 0.45;
-      }
-    });
+    active.material.emissiveIntensity = 0.55 + focus * 0.85 + 0.12 * Math.sin(elapsed * 3.2);
+    active.wireMaterial.opacity = 0.35 + focus * 0.45;
   }
 
   public updateObserverManifold(elapsed: number, state: SimulationUniformState): void {
@@ -392,20 +506,18 @@ export class ManifoldGlbArticulator {
 
   public dispose(): void {
     this.disposed = true;
+    const keep = new Set<THREE.Material>(this.assoVertexMat ? [this.assoVertexMat] : []);
     const groups = [this.einsteinGlbGroup, this.fkcrtGlbGroup, this.cksGlbGroup, this.k3GlbGroup, this.assoGlbGroup];
     for (const g of groups) {
       if (!g) continue;
-      g.traverse((obj) => {
-        if ((obj as THREE.Mesh).isMesh) {
-          const m = obj as THREE.Mesh;
-          m.geometry?.dispose();
-          if (Array.isArray(m.material)) {
-            m.material.forEach((mat) => mat.dispose());
-          } else {
-            m.material?.dispose();
-          }
-        }
-      });
+      g.removeFromParent();
+      disposeObjectTree(g, keep);
     }
+    this.einsteinGlbGroup = null;
+    this.fkcrtGlbGroup = null;
+    this.cksGlbGroup = null;
+    this.k3GlbGroup = null;
+    this.assoGlbGroup = null;
+    this.assoFrames.clear();
   }
 }
