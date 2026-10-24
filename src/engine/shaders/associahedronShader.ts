@@ -40,7 +40,7 @@ export function createAssociahedronScene(): AssociahedronHandles {
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         vDepth = -mv.z;
         float pulse = 1.0 + 0.18 * sin(uTime * 2.4 + position.x * 1.7 + position.z * 1.3);
-        gl_PointSize = (3.2 + 2.4 * uFocus) * pulse * (300.0 / max(vDepth, 0.5));
+        gl_PointSize = (1.5 + 0.9 * uFocus) * pulse * (300.0 / max(vDepth, 0.5));
         gl_Position = projectionMatrix * mv;
       }
     `,
@@ -50,9 +50,9 @@ export function createAssociahedronScene(): AssociahedronHandles {
       void main() {
         vec2 d = gl_PointCoord - vec2(0.5);
         float falloff = smoothstep(0.5, 0.0, length(d));
-        float alpha = falloff * clamp(1.5 - vDepth * 0.08, 0.15, 1.0) * 0.85;
+        float alpha = falloff * clamp(1.3 - vDepth * 0.09, 0.1, 1.0) * 0.38;
         if (alpha < 0.01) discard;
-        gl_FragColor = vec4(uColor * 1.8, alpha);
+        gl_FragColor = vec4(uColor * 1.05, alpha);
       }
     `,
     transparent: true,
@@ -87,9 +87,9 @@ export function createAssociahedronScene(): AssociahedronHandles {
         d = min(d, 1.0 - d);
         float core = smoothstep(0.085, 0.0, d);
         float shimmer = 0.75 + 0.25 * sin(uTime * 5.0 + along * 40.0);
-        float alpha = core * shimmer;
+        float alpha = core * shimmer * 0.6;
         if (alpha < 0.01) discard;
-        gl_FragColor = vec4(uColor * (1.4 + core), alpha);
+        gl_FragColor = vec4(uColor * (0.9 + core * 0.6), alpha);
       }
     `,
     transparent: true,

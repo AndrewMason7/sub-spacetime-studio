@@ -28,7 +28,7 @@ interface AssoFrameRecord {
 }
 
 /** radius the widest hull of each order is fitted to, in host-group units */
-const ASSO_TARGET_RADIUS = 2.15;
+const ASSO_TARGET_RADIUS = 2.58;
 const ASSO_EDGE_THRESHOLD_DEG = 0.2;
 
 function logLoadFailure(asset: string, err: unknown): void {
@@ -262,20 +262,20 @@ export class ManifoldGlbArticulator {
           const accent = accents[order];
           const isCage = mesh.name.includes('_Cage');
 
-          mesh.material = new THREE.MeshPhysicalMaterial({
+          // Solid, lit, low-emissive. The bloom pass thresholds at 0.42 luminance;
+          // a transparent, emissive, clearcoated surface sailed over it and the
+          // crystal rendered as a white blob with no readable facets. Facets must
+          // be shaded by the engine's key/rim lights, not by glow.
+          mesh.material = new THREE.MeshStandardMaterial({
             color: isCage ? 0x94a3b8 : accent,
-            emissive: isCage ? 0x334155 : accent,
-            emissiveIntensity: isCage ? 0.2 : 0.75,
-            metalness: 0.9,
-            roughness: 0.16,
-            iridescence: 0.95,
-            iridescenceIOR: 1.35,
-            clearcoat: 0.95,
-            clearcoatRoughness: 0.08,
+            emissive: isCage ? 0x1e293b : accent,
+            emissiveIntensity: isCage ? 0.05 : 0.1,
+            metalness: 0.72,
+            roughness: 0.3,
             flatShading: true,
-            transparent: true,
-            depthWrite: false,
-            opacity: isCage ? 0.25 : 0.92
+            transparent: false,
+            depthWrite: true,
+            side: THREE.FrontSide
           });
           mesh.visible = false;
           if (isCage) return; // exactness reference only, never rendered
@@ -288,9 +288,9 @@ export class ManifoldGlbArticulator {
             new THREE.LineBasicMaterial({
               color: accent,
               transparent: true,
-              opacity: 0.55,
-              blending: THREE.AdditiveBlending,
-              depthWrite: false
+              opacity: 0.9,
+              depthWrite: false,
+              toneMapped: false
             })
           );
           wire.name = `${mesh.name}_Wire`;
@@ -404,7 +404,7 @@ export class ManifoldGlbArticulator {
     // The GLB carries no facet ids, so no single facet is selected (deferred).
     const active = frames[idx];
     const focus = state.facetResidueFocus;
-    active.material.emissiveIntensity = 0.55 + focus * 0.85 + 0.12 * Math.sin(elapsed * 3.2);
+    active.material.emissiveIntensity = 0.08 + focus * 0.16 + 0.03 * Math.sin(elapsed * 3.2);
     active.wireMaterial.opacity = 0.35 + focus * 0.45;
   }
 
