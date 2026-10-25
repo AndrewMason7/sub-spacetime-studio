@@ -497,6 +497,14 @@ export class QuantumSpacetimeEngine {
       }
     }
 
+    // Attenuate the shared 1px random starfield only while MOD-05 is present so its
+    // dedicated astrometric stream & dome replace the sensor-noise specks without
+    // altering modules 1-4 (where modePresence.associahedron === 0 -> opacity === 0.65).
+    if (this.starfieldPoints) {
+      const starMat = this.starfieldPoints.material as THREE.PointsMaterial;
+      starMat.opacity = 0.65 * (1.0 - 0.78 * this.modePresence.associahedron);
+    }
+
     if (this.observerHandles.group.visible) {
       const swirl = (1 - this.modePresence.observer) * 0.9;
       if (this.isDirectorTourActive) {

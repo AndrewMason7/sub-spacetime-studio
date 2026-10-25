@@ -288,6 +288,16 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.2 }}
                 className="vp-slim-top-strip"
+                style={
+                  activeMode === 'associahedron'
+                    ? {
+                        background:
+                          'linear-gradient(90deg, rgba(6, 24, 28, 0.72) 0%, rgba(8, 14, 24, 0.66) 52%, rgba(18, 12, 32, 0.70) 100%)',
+                        boxShadow:
+                          'inset 0 1px 0 rgba(94, 234, 212, 0.18), 0 0 0 1px rgba(94, 234, 212, 0.22), 0 10px 26px rgba(0, 0, 0, 0.56)'
+                      }
+                    : undefined
+                }
               >
                 <div className="vp-slim-left">
                   <span
@@ -306,12 +316,46 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                   <div className="vp-slim-right">
                     <span
                       className="vp-slim-pill"
-                      style={{ color: meta.statusColor, borderColor: `${meta.statusColor}44` }}
+                      style={{
+                        color: meta.statusColor,
+                        borderColor: `${meta.statusColor}44`,
+                        background: activeMode === 'associahedron' ? 'rgba(94, 234, 212, 0.08)' : undefined
+                      }}
                     >
                       {invariantStr}
                     </span>
-                    <span className="vp-slim-pill">{topologyStr}</span>
-                    <span className="vp-slim-pill muted-pill">
+                    <span
+                      className="vp-slim-pill"
+                      style={
+                        activeMode === 'associahedron'
+                          ? {
+                              color: uniforms.associahedronOrder >= 5 ? '#93c5fd' : '#99f6e4',
+                              borderColor:
+                                uniforms.associahedronOrder >= 5
+                                  ? 'rgba(147, 197, 253, 0.34)'
+                                  : 'rgba(94, 234, 212, 0.34)',
+                              background:
+                                uniforms.associahedronOrder >= 5
+                                  ? 'rgba(147, 197, 253, 0.08)'
+                                  : 'rgba(94, 234, 212, 0.08)'
+                            }
+                          : undefined
+                      }
+                    >
+                      {topologyStr}
+                    </span>
+                    <span
+                      className="vp-slim-pill muted-pill"
+                      style={
+                        activeMode === 'associahedron'
+                          ? {
+                              color: '#d8b4fe',
+                              borderColor: 'rgba(216, 180, 254, 0.26)',
+                              background: 'rgba(192, 132, 252, 0.07)'
+                            }
+                          : undefined
+                      }
+                    >
                       <Box size={10} strokeWidth={1.5} />
                       <span>{glbMeshName.split(' ')[0]}</span>
                     </span>
@@ -351,8 +395,38 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
               )}
             </AnimatePresence>
 
+            {!isMobile && activeMode === 'associahedron' && (
+              <div
+                className="vp-slim-pill"
+                style={{
+                  pointerEvents: 'auto',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '8.5px',
+                  letterSpacing: '0.03em',
+                  padding: '3px 11px',
+                  color: '#ccfbf1',
+                  background: 'rgba(6, 22, 26, 0.72)',
+                  border: '1px solid rgba(94, 234, 212, 0.24)',
+                  boxShadow: '0 6px 18px rgba(0, 0, 0, 0.55)'
+                }}
+              >
+                <span style={{ color: '#5eead4', fontWeight: 700 }}>CAPTION //</span>{' '}
+                <span>{meta.subtitle}</span>
+              </div>
+            )}
+
             {!isMobile && (
-              <div className="vp-cad-toolbar unified-single-bar">
+              <div
+                className="vp-cad-toolbar unified-single-bar"
+                style={
+                  activeMode === 'associahedron'
+                    ? {
+                        boxShadow:
+                          'inset 0 1px 0 rgba(94, 234, 212, 0.16), 0 0 0 1px rgba(94, 234, 212, 0.22), 0 12px 30px rgba(0, 0, 0, 0.68)'
+                      }
+                    : undefined
+                }
+              >
                 <button
                   type="button"
                   className="vp-tool-btn zoom-highlight"

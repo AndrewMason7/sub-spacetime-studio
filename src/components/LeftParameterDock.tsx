@@ -58,10 +58,15 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
   uniformsRef.current = uniforms;
 
   // Distinct per-channel color accents so the 3 DAW faders are immediately distinguishable by eye!
+  // In MOD-05, all 3 channels harmonize with the crystal's 3-order / 3-light palette (#5eead4 teal, #93c5fd ice-sapphire, #c084fc lilac rim).
   const getChannelAccent = (sliderIdx: number): string => {
+    if (activeMode === 'associahedron') {
+      if (sliderIdx === 0) return '#5eead4';
+      if (sliderIdx === 1) return '#93c5fd';
+      return '#c084fc';
+    }
     if (sliderIdx === 0) return meta.statusColor;
     if (sliderIdx === 1) return '#fbbf24'; // Warm Tactile Amber-Gold for Channel 2
-    if (activeMode === 'associahedron') return '#5eead4';
     return activeMode === 'fkcrt' || activeMode === 'retraction' ? '#38bdf8' : '#c084fc'; // Cyan/Violet for Channel 3
   };
 
@@ -189,13 +194,27 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
   );
 
   return (
-    <aside className="floating-instrument-panel left-instrument-rack">
+    <aside
+      className="floating-instrument-panel left-instrument-rack"
+      style={
+        activeMode === 'associahedron'
+          ? {
+              borderColor: 'rgba(94, 234, 212, 0.24)',
+              boxShadow: 'inset 0 1px 0 rgba(94, 234, 212, 0.14), 0 18px 42px rgba(0, 0, 0, 0.78)'
+            }
+          : undefined
+      }
+    >
       {/* SECTION 1: DUAL-MODE RACK SWITCHER (CYAN/SCENE-COLORED HARDWARE ZONE) */}
       <div
         className="ws-pane-header zone-header-faders"
         style={{
           padding: '0 8px',
-          borderLeft: `3px solid ${meta.statusColor}`
+          borderLeft: `3px solid ${meta.statusColor}`,
+          background:
+            activeMode === 'associahedron'
+              ? 'linear-gradient(90deg, rgba(8, 36, 38, 0.92) 0%, rgba(12, 18, 32, 0.88) 100%)'
+              : undefined
         }}
       >
         <div className="rack-mode-pills">
@@ -232,7 +251,18 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
             whileHover={{ scale: 1.015 }}
             whileTap={{ scale: 0.975 }}
             className={`ws-trigger-btn ${isDanger ? 'crimson' : ''}`}
-            style={{ marginBottom: 10 }}
+            style={{
+              marginBottom: 10,
+              ...(activeMode === 'associahedron'
+                ? {
+                    background:
+                      'linear-gradient(90deg, rgba(94, 234, 212, 0.20) 0%, rgba(147, 197, 253, 0.16) 55%, rgba(192, 132, 252, 0.16) 100%)',
+                    boxShadow:
+                      'inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 0 1px rgba(94, 234, 212, 0.45), 0 4px 12px rgba(0, 0, 0, 0.5)',
+                    color: '#ccfbf1'
+                  }
+                : {})
+            }}
             onClick={() => onTriggerQuickAction(activeMode)}
           >
             {isDanger ? (
@@ -320,7 +350,15 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                   {critPct !== null && (
                     <div
                       className="daw-critical-notch"
-                      style={{ left: `${critPct}%` }}
+                      style={{
+                        left: `${critPct}%`,
+                        ...(activeMode === 'associahedron'
+                          ? {
+                              background: '#93c5fd',
+                              boxShadow: '0 0 6px #93c5fd'
+                            }
+                          : {})
+                      }}
                       title={s.criticalLabel || 'Critical Threshold'}
                     />
                   )}
@@ -377,14 +415,27 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                 <div className="daw-scale-labels">
                   <span>{s.min.toFixed(1)}</span>
                   {s.criticalValue !== undefined && (
-                    <span style={{ color: '#fb7185', fontWeight: 600 }}>
+                    <span
+                      style={{
+                        color: activeMode === 'associahedron' ? '#93c5fd' : '#fb7185',
+                        fontWeight: 600
+                      }}
+                    >
                       CRIT: {s.criticalValue.toFixed(1)}
                     </span>
                   )}
                   <span>{s.max.toFixed(1)}</span>
                 </div>
 
-                <div className="scrubber-caption" id={`slider-caption-${s.id}`}>
+                <div
+                  className="scrubber-caption"
+                  id={`slider-caption-${s.id}`}
+                  style={
+                    activeMode === 'associahedron'
+                      ? { color: '#cbd5e1', borderLeft: `2px solid ${chColor}44`, paddingLeft: 6 }
+                      : undefined
+                  }
+                >
                   {s.description}
                 </div>
               </div>

@@ -258,6 +258,8 @@ export const THEOREM_SCENES: Record<SceneModeId, TheoremMetadata> = {
     subtitle: 'Loday Realization (a_i·b_i, Σ = n(n+1)/2) × ABHY Associahedron Canonical Form',
     statusBadge: 'SCAFFOLD_UNVERIFIED',
     statusLabel: 'SCAFFOLD — NOT IN OPENAI/MATH; GEOMETRY EXACT, PROOF UNVERIFIED',
+    // Amber, deliberately: this colour IS the unverified signal. Matching it to the
+    // module accent (teal) makes an unproven skeleton look like every other module.
     statusColor: '#fbbf24',
     paperRef:
       'J.-L. Loday, "Realization of the Stasheff polytope" (Arch. Math. 83, 2004); Arkani-Hamed, Bai, He, Yan, "Scattering Forms and the Positive Geometry of Kinematics" (2017)',
@@ -312,7 +314,7 @@ export const THEOREM_SCENES: Record<SceneModeId, TheoremMetadata> = {
         step: 0.01,
         defaultValue: 0.15,
         description:
-          'Global emphasis on the facet lattice (glow + edge intensity) and the scan ring. Each facet is a pole of the canonical form whose residue is a φ³ partial amplitude — but this slider does NOT yet select an individual facet; per-facet selection is deferred.'
+          'Global emphasis on the crystal facet sheen and crease lattice. Each facet is a pole of the ABHY canonical form whose residue is a φ³ partial amplitude — per-facet residue selection remains deferred.'
       }
     ]
   }
