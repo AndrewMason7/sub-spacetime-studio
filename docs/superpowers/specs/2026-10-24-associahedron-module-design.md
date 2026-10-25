@@ -158,7 +158,7 @@ export function createAssociahedronScene(): AssociahedronHandles
 |---|---|---|---|---|
 | `associahedronOrder` | Associahedron Order | `n` | 4 → 6, step 1 | n = 4: exact 14-vertex hull; n = 5 / 6: hull of the projected 42 / 132 points (27–31 / 32–39 hull vertices) |
 | `projectionSweep` | 4D→3D Projection Sweep | `P_{3}` | 0 → 1, step 0.01 | steps through the 24 baked hulls (n ≥ 5); inert at n = 4 ("EXACT 3D") |
-| `facetResidueFocus` | Canonical-Form Pole Emphasis | `\Omega` | 0 → 1, step 0.01 | global emphasis only; per-facet pole selection deferred |
+| `facetResidueFocus` | Canonical-Form Pole Emphasis | `Ω` | 0 → 1, step 0.01 | global emphasis only; per-facet pole selection deferred |
 
 ### Telemetry (`physicsTelemetryService.ts`)
 

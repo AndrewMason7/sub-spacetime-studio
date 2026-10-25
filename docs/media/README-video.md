@@ -66,10 +66,10 @@ Tooling: `scripts/capture-mac-cdp.py` (screencast capture), `scripts/capture-ass
 
 `scripts/capture-director-m05.py` captures the full Director's Cut Act V choreography on a clean Pure 3D stage (450 frames @ 30 fps = **15.0 s**):
 
-- **Exact 3D Loday crystal (`n = 4`, `#5eead4` Seafoam Teal)** with multi-axis X/Y/Z group tumbling (`rotation.y = φ`, `rotation.x = 0.56 sin φ`, `rotation.z = 0.38 cos φ`), inner hull rotation, 360° orbital crane camera sweep (`azimuth = -φ`), orbiting grazing light, and smooth ABHY Canonical-Form Pole Sheen sweep ($\Omega(\varphi) = 0.15 + 0.77 \cdot \frac{1 - \cos\varphi}{2}$, sweeping $0.15 \to 0.92 \to 0.15$).
+- **Exact 3D Loday crystal (`n = 4`, `#5eead4` Seafoam Teal)** with multi-axis X/Y/Z group tumbling (`rotation.y = φ`, `rotation.x = 0.56 sin φ`, `rotation.z = 0.38 cos φ`), inner hull rotation, 360° orbital crane camera sweep (`azimuth = -φ`), orbiting grazing light, and smooth ABHY Canonical-Form Pole Sheen sweep (`Omega(phi) = 0.15 + 0.77 * (1 - cos phi) / 2`, sweeping `0.15 -> 0.92 -> 0.15`).
 - **Two critical invariants make the loop exact (`3.35/255` seam vs `3.34/255` adjacent step on 16:9; `3.86/255` vs `3.85/255` on 1:1):**
   1. **No competing `requestAnimationFrame` loop:** `INIT_JS` overrides `eng.update = () => {}` so React's live animation loop cannot overwrite `assoHandles.group.rotation` or advance `uTime` while `Page.captureScreenshot` awaits rAF settle ticks.
-  2. **Dynamic bounding-box optical centering:** Because the exact $n=4$ Loday embedding has its vertex centroid at $(0,0,0)$ while its bounding-box midpoint sits at $(-0.707, -0.816, 0)$, the script transforms the active hull's local bounding-box center into world space each frame and aims the orbital crane camera at it so the crystal never drifts off-center during multi-axis tumbling.
+  2. **Dynamic bounding-box optical centering:** Because the exact `n = 4` Loday embedding has its vertex centroid at `(0, 0, 0)` while its bounding-box midpoint sits at `(-0.707, -0.816, 0)`, the script transforms the active hull's local bounding-box center into world space each frame and aims the orbital crane camera at it so the crystal never drifts off-center during multi-axis tumbling.
 
 ## Camera-orbit turntable (the landscape loop)
 
