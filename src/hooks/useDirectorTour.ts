@@ -170,7 +170,14 @@ function evaluateTourSnapshot(tMs: number): TourSnapshot {
           ? 'n = 6: 132 Catalan vertices in ℝ⁶ (5D shadow) + ABHY pole sheen — before returning to exact n = 4...'
           : 'Restoring exact 3D Loday crystal (n = 4, V14 E21 F9) — Seamless Loop restarting at Act I...';
 
-  const associahedronOrder = t < 38600 ? 4.0 : t < 41400 ? 5.0 : t < 43700 ? 6.0 : 4.0;
+  const associahedronOrder =
+    t < 38600
+      ? 4.0
+      : t < 41400
+        ? lerpEased(t, 38600, 900, 4.0, 5.0)
+        : t < 43700
+          ? lerpEased(t, 41400, 900, 5.0, 6.0)
+          : lerpEased(t, 43700, 900, 6.0, 4.0);
   const projectionSweep =
     t < 38600
       ? 0.0
@@ -467,18 +474,18 @@ export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourS
         setTourNarration(
           'n = 5: 42 Catalan trees in ℝ⁵ — sweeping 24 independently hulled 4D → 3D projected shadows!'
         );
-        c.onChangeUniform('associahedronOrder', 5.0);
         c.onHighlightSlider(1);
       });
+      scheduleTween(38600, 900, 'associahedronOrder', 4.0, 5.0);
       scheduleTween(38600, 2600, 'projectionSweep', 0.0, 1.0);
       scheduleAt(41400, () => {
         const c = callbacksRef.current;
         setTourNarration(
           'n = 6: 132 Catalan vertices in ℝ⁶ (5D shadow) + ABHY pole sheen — before returning to exact n = 4...'
         );
-        c.onChangeUniform('associahedronOrder', 6.0);
         c.onHighlightSlider(2);
       });
+      scheduleTween(41400, 900, 'associahedronOrder', 5.0, 6.0);
       scheduleTween(41400, 2100, 'projectionSweep', 1.0, 0.15);
       scheduleTween(41400, 2100, 'facetResidueFocus', 0.25, 0.9);
       scheduleAt(43700, () => {
@@ -486,9 +493,9 @@ export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourS
         setTourNarration(
           'Restoring exact 3D Loday crystal (n = 4, V14 E21 F9) — Seamless Loop restarting at Act I...'
         );
-        c.onChangeUniform('associahedronOrder', 4.0);
         c.onHighlightSlider(0);
       });
+      scheduleTween(43700, 900, 'associahedronOrder', 6.0, 4.0);
       scheduleTween(43700, 1100, 'facetResidueFocus', 0.9, 0.15);
 
       // SEAMLESS INFINITE LOOP: Restart from Act 0 unless the user stopped the tour!

@@ -24,10 +24,25 @@ interface AssoFrameRecord {
   mesh: THREE.Mesh;
   material: THREE.MeshPhysicalMaterial;
   wireMaterial: THREE.LineBasicMaterial;
+  nodesMaterial: THREE.MeshBasicMaterial | null;
   nodes: THREE.InstancedMesh | null;
   shaderUniforms: {
     uAssoSweepPhase: { value: number };
   };
+}
+
+const ASSO_ACCENT_COLORS: Record<number, THREE.Color> = {
+  4: new THREE.Color(0x5eead4),
+  5: new THREE.Color(0x93c5fd),
+  6: new THREE.Color(0xd8b4fe)
+};
+
+function sampleAssociahedronAccent(continuousOrder: number, target: THREE.Color): THREE.Color {
+  const clamped = Math.max(4.0, Math.min(6.0, continuousOrder));
+  if (clamped <= 5.0) {
+    return target.lerpColors(ASSO_ACCENT_COLORS[4], ASSO_ACCENT_COLORS[5], clamped - 4.0);
+  }
+  return target.lerpColors(ASSO_ACCENT_COLORS[5], ASSO_ACCENT_COLORS[6], clamped - 5.0);
 }
 
 /** radius the widest hull of each order is fitted to, in host-group units */
@@ -96,6 +111,8 @@ export class ManifoldGlbArticulator {
   /** order -> frames (one true hull per projection angle); n=4 has a single frame */
   private assoFrames: Map<number, AssoFrameRecord[]> = new Map();
   private assoActiveKey = '';
+  private assoBlendedColor = new THREE.Color(0x5eead4);
+  private assoLastTime = 0;
   private assoStatus: AssetStatus = 'idle';
   private assoVertexMat: THREE.ShaderMaterial | null = null;
   private disposed = false;
@@ -416,17 +433,19 @@ export class ManifoldGlbArticulator {
           // or distinct positions of each convex hull for n=5/6).
           // Styled as luminous faceted octahedra (vertex gems) with controlled tone mapping.
           let nodes: THREE.InstancedMesh | null = null;
+          let nodesMaterial: THREE.MeshBasicMaterial | null = null;
           const nodePositions = (order === 4 && cageMesh && cageMesh.geometry)
             ? distinctPositions(cageMesh.geometry)
             : distinctPositions(mesh.geometry);
           const nodeCount = nodePositions.length / 3;
           if (nodeCount > 0) {
+            nodesMaterial = new THREE.MeshBasicMaterial({
+              color: accent,
+              toneMapped: false
+            });
             nodes = new THREE.InstancedMesh(
               new THREE.OctahedronGeometry(0.048, 0),
-              new THREE.MeshBasicMaterial({
-                color: accent,
-                toneMapped: false
-              }),
+              nodesMaterial,
               nodeCount
             );
             nodes.name = `${mesh.name}_Nodes`;
@@ -444,6 +463,7 @@ export class ManifoldGlbArticulator {
             mesh,
             material: mesh.material as THREE.MeshPhysicalMaterial,
             wireMaterial: wire.material as THREE.LineBasicMaterial,
+            nodesMaterial,
             nodes,
             shaderUniforms
           });
@@ -555,7 +575,23 @@ export class ManifoldGlbArticulator {
     // The GLB carries no facet ids, so no single facet is selected (deferred).
     const active = frames[idx];
     const focus = state.facetResidueFocus;
-        active.material.emissiveIntensity = 0.11 + focus * 0.14 + 0.015 * Math.sin(elapsed * 3.2);
+
+    // Smoothly interpolate crystal, wireframe, and vertex-gem color across n = 4 <-> 5 <-> 6
+    // so there is never an abrupt color pop when switching orders or running the Director Tour!
+    const targetColor = sampleAssociahedronAccent(state.associahedronOrder, new THREE.Color());
+    const dt = Math.max(0.005, Math.min(0.1, Math.abs(elapsed - this.assoLastTime) || 0.016));
+    this.assoLastTime = elapsed;
+    const colorLerpFactor = 1.0 - Math.exp(-dt * 7.5);
+    this.assoBlendedColor.lerp(targetColor, colorLerpFactor);
+
+    active.material.color.copy(this.assoBlendedColor);
+    active.material.emissive.copy(this.assoBlendedColor);
+    active.wireMaterial.color.copy(this.assoBlendedColor);
+    if (active.nodesMaterial) {
+      active.nodesMaterial.color.copy(this.assoBlendedColor);
+    }
+
+    active.material.emissiveIntensity = 0.11 + focus * 0.14 + 0.015 * Math.sin(elapsed * 3.2);
     active.wireMaterial.opacity = 0.62 + focus * 0.3;
     active.shaderUniforms.uAssoSweepPhase.value = elapsed + state.projectionSweep * Math.PI;
 
