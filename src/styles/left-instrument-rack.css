@@ -213,14 +213,14 @@
 
 .daw-floating-tracker {
   position: absolute;
-  top: -20px;
+  top: -15px;
   transform: translateX(-50%);
   background: rgba(9, 14, 24, 0.95);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14), 0 4px 10px rgba(0, 0, 0, 0.8);
   border-radius: 4px;
-  padding: 1px 6px;
+  padding: 0 5px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
   pointer-events: none;
   z-index: 10;

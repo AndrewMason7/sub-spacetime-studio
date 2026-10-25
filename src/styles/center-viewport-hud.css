@@ -350,6 +350,22 @@
   color: #ffffff;
 }
 
+@media (max-width: 1400px) {
+  .director-invariant-readout {
+    display: none;
+  }
+  .director-act-btn {
+    padding: 2px 6px;
+    font-size: 7.5px;
+  }
+}
+
+@media (max-width: 1220px) {
+  .director-badge span {
+    display: none;
+  }
+}
+
 .director-narration-line {
   font-size: 10px;
   font-weight: 600;

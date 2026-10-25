@@ -16,12 +16,13 @@
 ## Table of Contents
 
 1. [Scientific Scope & Formal Verification Thesis](#1-scientific-scope--formal-verification-thesis)
-2. [The Four Interactive Spacetime Manifolds (`M01` - `M04`)](#2-the-four-interactive-spacetime-manifolds-m01---m04)
+2. [The Five Interactive Spacetime Manifolds (`M01` - `M05`)](#2-the-five-interactive-spacetime-manifolds-m01---m05)
 3. [Deep Dive into the Manifolds](#3-deep-dive-into-the-manifolds)
    - [M01 - Observer Hilbert Manifold](#m01---observer-anchored-hilbert-hologram-arxiv250102359--f348)
    - [M02 - FK-CRT Critical Phase Manifold](#m02---fk-crt-critical-phase-manifold-fkcrtlean--family-f211)
    - [M03 - CKS-Willow Holographic Horizon](#m03---cks-willow-holographic-horizon-cksbondipenroselean--qacparitylean)
    - [M04 - F032 K3 Retraction Audit](#m04---f032-k3-retraction-audit-withdrawal_f032lean)
+   - [M05 - The Associahedron (ABHY Positive Geometry)](#m05---the-associahedron-loday-realization--abhy-positive-geometry)
 4. [System Architecture & Engineering Stack](#4-system-architecture--engineering-stack)
    - [A. Modular Separation of Concerns (SoC) Codebase Layout](#a-modular-separation-of-concerns-soc-codebase-layout)
    - [B. Blender 5.2.2 LTS Procedural Geometry Pipeline](#b-blender-522-lts-procedural-geometry-pipeline)
@@ -64,7 +65,7 @@ Because the **Eliashberg-Murphy Lagrangian surgery and cancellation theorem** re
 
 ---
 
-## 2. The Four Interactive Spacetime Manifolds (`M01` - `M04`)
+## 2. The Five Interactive Spacetime Manifolds (`M01` - `M05`)
 
 | Module | Physical / Mathematical Regime | Primary Formal & Literature Sources | Governing Equations & Topological Invariants | Verification Status |
 | :--- | :--- | :--- | :--- | :--- |
@@ -72,6 +73,7 @@ Because the **Eliashberg-Murphy Lagrangian surgery and cancellation theorem** re
 | **`M02`**<br>**FK-CRT Phase Transition** | Critical Random Planar Maps: Liouville Quantum Gravity Sphere vs. Brownian CRT | - **`openai/math` F211**: `ComparatorChallenges/FKCRT.lean` (*Brownian continuum random tree limits of finite Fortuin-Kasteleyn maps above four*) | `w_q(M, A) = q^(k_M(A) + (|A| - |V(M)|)/2)`<br>`d_e(s,t) = e(s) + e(t) - 2*inf(e), e(t) = ||B_t - t*B_1||_3`<br>`q <= 4: LQG Sphere (d_H = 4) <=> q > 4: Aldous CRT (d_H = 2)` | **`PARTIAL LEAN SCOPE`**<br>Supercritical regime (q > 4) formalized in `FKCRT.lean` (1 of 7 F211 papers) |
 | **`M03`**<br>**CKS-Willow Horizon** | Hyperboloidal Bondi-Penrose Mass Inequality & 2D Boundary Surface Code Holography | - **`openai/math` F260**: `CKSBondiPenrose.lean` (3,596 LOC)<br>- **`openai/math` F274**: `QACParity.lean`<br>- **Google Quantum AI**: *105-Qubit Willow Surface Code & AlphaQubit 2* (*arXiv:2412.06784*) | `m_Bondi >= sqrt(A_min(g) / (16*pi)), A_Schw = 16*pi*m_Bondi^2`<br>`for all d, QAC^0_d does not contain Parity_n => Non-Local Boundary Decoding` | **`VERIFIED CORE`**<br>`QACParity.lean` 100% verified; CKS end replacement & Schwarzschild equality in Lean 4 |
 | **`M04`**<br>**F032 K3 Retraction Audit** | Quintic K3 Calabi-Yau Slice & Lagrangian Cusp Stabilization Sign Inversion | - **`openai/math` F032 Withdrawal** (Commit `30148886`, Oct 6-7, 2026)<br>- **`WITHDRAWAL_F032.lean`**: Formal `omega` counter-proof of Eliashberg-Murphy hypothesis failure | `Assumed (+1): I_new = -m + m = 0`<br>`Reality (-1): I_new = I(f1) - m = -2m != 0`<br>`chi(K3) = 24, tau(K3) = -16, b_2^- = 19` | **`WITHDRAWN (0% LEAN)`**<br>3 unformalized Hodge/K3 drafts retracted; counterexample verified in 0.01s via `omega` |
+| **`M05`**<br>**The Associahedron** | Exact 3D Loday Realization & 4D/5D Projected Shadows Behind ABHY $\phi^3$ Amplitudes | - **J.-L. Loday**, *Arch. Math.* 83 (2004)<br>- **N. Arkani-Hamed, Y. Bai, S. He & G. Yan**, *JHEP* 05 (2018) 096 (*ABHY Positive Geometry*)<br>- **`Associahedron.lean`**: Explicit Lean 4 scaffold | `x_i(T) = L_i(T) * R_i(T), Sum x_i = n(n+1)/2`<br>`#V = C_n = (2n)! / ((n+1)! n!), #F = (n+2)(n-1)/2`<br>`n=4 Exact 3D: V=14, E=21, F=9, chi=2` | **`SCAFFOLD // UNVERIFIED`**<br>Geometry exact (1.8e-15 float64 isometry at `n=4`); Lean 4 proof intentionally marked `sorry` |
 
 ---
 
@@ -132,6 +134,12 @@ I_new = I(f1) - m = -2m != 0
 ```
 
 - **Physical 3D Geometry:** 6D-to-3D projection of the **Hanson Fermat Quintic Calabi-Yau / K3 slice** (`z1^n + z2^n = 1`). Scrubbing `sigma_trace` from `+1.0` to `-1.0` triggers the **`Cusp_Shatter` Blender Shape Key** and crimson GLSL fracture displacement, exposing non-canceling double-point intersection rings while highlighting the 3-line Lean 4 `omega` refutation.
+
+### `M05` - The Associahedron (Loday Realization & ABHY Positive Geometry)
+Whereas `M01`–`M04` render differential-geometric metaphors of higher-dimensional physics, `M05` renders an **exact combinatorial polytope**:
+- **Loday's Integer Coordinates (2004):** Vertices correspond to plane binary trees $T$ with $n$ internal nodes (or triangulations of a convex $(n+2)$-gon). Labelling internal nodes $1 \dots n$ in in-order, node $i$ receives coordinate $x_i(T) = L_i(T) \cdot R_i(T)$ (left subtree leaf count $\times$ right subtree leaf count). Every vertex satisfies $\sum_{i=1}^n x_i = \frac{n(n+1)}{2}$, so the Stasheff polytope $K_n$ is $(n-1)$-dimensional inside that hyperplane.
+- **Exact 3D at `n = 4` vs. Projected 4D/5D Shadows at `n = 5, 6`:** At $n = 4$ ($C_4 = 14$ vertices, 21 edges, 9 facets, $\chi = 2$), the hyperplane is 3-dimensional, so orthonormal basis projection into $\mathbb{R}^3$ is an **exact isometry** (maximum distortion $1.8 \times 10^{-15}$ in the float64 bake). At $n = 5$ ($42$ vertices in $\mathbb{R}^5$) and $n = 6$ ($132$ vertices in $\mathbb{R}^6$), the polytope is 4D/5D; sweeping the projection angle changes which combinatorial vertices lie on the 3D shadow boundary, so `associahedron.glb` bakes **24 independent convex hulls per order** (`AssoN5_Proj00..23`, `AssoN6_Proj00..23`).
+- **ABHY Canonical Form:** In the Arkani-Hamed–Bai–He–Yan positive-geometry program, the canonical form $\Omega(K_n)$ of this polytope is the tree-level bi-adjoint $\phi^3$ scattering amplitude, with each facet corresponding to a planar propagator pole.
 
 ---
 
@@ -238,10 +246,10 @@ The audio engine ([`AudioSynthesizer.ts`](./src/engine/AudioSynthesizer.ts)) is 
 ## 5. Interactive Features & UI Controls
 
 ### Director's Cut 360-Degree Orbital Crane Tour
-Clicking the **`TOUR`** button in the top menu bar launches the choreographed **Director's Cut Tour** ([`useDirectorTour.ts`](./src/hooks/useDirectorTour.ts)):
-- **Multi-Axis Orbit & Tumbling:** Continuously executes 360-degree orbital sweeps while tumbling each 3D manifold across X, Y, and Z axes so the user inspects poles, interiors, and underbellies.
-- **Automated Parameter Choreography:** Smoothly tweens physical uniform sliders to illustrate key mathematical thresholds (e.g., collapsing `S_Ob -> 0`, crossing `q = 4.0`, spinning Kerr ergosphere, and flipping `sigma_trace = -1`).
-- **Infinite Loop:** Seamlessly cycles across all four acts with synchronized live narration banners and progress bars until toggled off.
+Clicking the **`TOUR`** button in the top menu bar launches the choreographed 5-Act **Director's Cut Tour** ([`useDirectorTour.ts`](./src/hooks/useDirectorTour.ts)):
+- **Multi-Axis Orbit & Tumbling:** Continuously executes 360-degree orbital sweeps while tumbling each 3D manifold (`M01`–`M05`) across X, Y, and Z axes so the user inspects poles, interiors, and underbellies.
+- **Automated Parameter Choreography (5 Acts, 45s Cycle):** Smoothly tweens physical uniform sliders across all five modules — collapsing `S_Ob -> 0` (`Act I · M01`), crossing `q = 4.0` (`Act II · M02`), spinning the Kerr ergosphere (`Act III · M03`), flipping `sigma_trace = -1` (`Act IV · M04`), and stepping the Loday Associahedron from exact 3D (`n = 4`) through 4D/5D projected shadows (`n = 5, 6`) and back (`Act V · M05`).
+- **Infinite Loop:** Seamlessly cycles across all five acts (`ACT I · M01` through `ACT V · M05`) with interactive act-jump pills, live narration banners, and progress bars until toggled off.
 
 ### Shiki Lean 4 AST Line-Synchronization
 The right pane hosts an embedded Lean 4 code inspector ([`RightLeanIDE.tsx`](./src/components/RightLeanIDE.tsx)) powered by **Shiki**:
@@ -270,6 +278,7 @@ The left instrument rack features:
 | **`2`** | Switch to **`M02`** (FK-CRT Phase Transition) |
 | **`3`** | Switch to **`M03`** (CKS-Willow Holographic Horizon) |
 | **`4`** | Switch to **`M04`** (F032 K3 Retraction Audit) |
+| **`5`** | Switch to **`M05`** (Associahedron ABHY Positive Geometry) |
 | **`Cmd/Ctrl + K`** | Open the **Command Palette** modal |
 | **`Cmd/Ctrl + P`** | **Capture Screenshot** (exports high-res WebGL frame) |
 | **`Space`** | **Pause / Resume** 60 FPS simulation clock |

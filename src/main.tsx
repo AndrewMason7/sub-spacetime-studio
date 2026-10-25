@@ -78,7 +78,8 @@ const WorkstationApp: React.FC = () => {
     'einstein-four-classification',
     'fkcrt-lean',
     'cks-bondi-penrose',
-    'f032-withdrawal-notice'
+    'f032-withdrawal-notice',
+    'associahedron-lean'
   ]);
   const [activeFileId, setActiveFileId] = useState<string>('einstein-four-classification');
   const [activeCameraPreset, setActiveCameraPreset] = useState<CameraPresetId | null>('perspective');

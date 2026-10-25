@@ -605,13 +605,16 @@ export class QuantumSpacetimeEngine {
 
     if (this.assoHandles.group.visible) {
       try {
+        const swirl = (1 - this.modePresence.associahedron) * 0.9;
         this.assoHandles.update(elapsed, this.state.facetResidueFocus, this.state.projectionSweep);
       // the GLB hulls tumble inside the group; during the Director Tour the
       // group adds the same multi-axis tumble as the other four modules
       if (this.isDirectorTourActive) {
+        this.assoHandles.group.rotation.y = elapsed * 0.42 + swirl;
         this.assoHandles.group.rotation.x = Math.sin(this.directorTourTime * 0.8) * 0.6;
         this.assoHandles.group.rotation.z = Math.cos(this.directorTourTime * 0.56) * 0.42;
       } else {
+        this.assoHandles.group.rotation.y = swirl;
         this.assoHandles.group.rotation.x *= 0.9;
         this.assoHandles.group.rotation.z *= 0.9;
       }

@@ -245,12 +245,17 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                   )}
 
                   <span
+                    className="director-invariant-readout"
                     style={{
                       fontSize: 9,
                       color: meta.statusColor,
                       fontWeight: 700,
                       marginLeft: 'auto',
-                      marginRight: 6
+                      marginRight: 6,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      minWidth: 0
                     }}
                   >
                     {invariantStr}
@@ -258,6 +263,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
 
                   <button
                     className="director-stop-btn"
+                    style={{ flexShrink: 0 }}
                     onClick={onStopDirectorTour}
                     title="Exit Director Tour"
                   >

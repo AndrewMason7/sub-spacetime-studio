@@ -196,7 +196,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search theorems (F211, F260, F348, F032), Lean 4 AST, or use ↑/↓ arrows..."
+            placeholder="Search theorems (F211, F260, F348, F032, ABHY), Lean 4 AST, or use ↑/↓ arrows..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);

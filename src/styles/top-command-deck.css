@@ -302,10 +302,16 @@
   color: #fda4af;
 }
 
-@media (max-width: 1360px) {
+@media (max-width: 1560px) {
   .ws-brand-stack,
   .pill-label,
   .hide-dash-text {
+    display: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .raycast-placeholder {
     display: none;
   }
 }

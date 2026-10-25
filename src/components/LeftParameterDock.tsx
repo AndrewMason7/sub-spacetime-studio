@@ -384,7 +384,7 @@ export const LeftParameterDock: React.FC<LeftParameterDockProps> = ({
                     <span className="daw-cap-centerline" style={{ background: chColor }} />
                   </div>
 
-                  {isHighlighted && (
+                  {hoveredSlider === s.id && (
                     <div
                       className="daw-floating-tracker"
                       style={{ left: `${pct}%`, color: chColor }}

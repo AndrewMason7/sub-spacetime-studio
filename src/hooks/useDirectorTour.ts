@@ -248,39 +248,49 @@ export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourS
       }
 
       // =======================================================================
-      // ACT V (36.0s – 45.0s): M05 · ASSOCIAHEDRON — EXACT 3D, THEN ITS SHADOWS
+      // ACT V (36.0s – 45.0s): M05 · ASSOCIAHEDRON — EXACT 3D, THEN 4D & 5D SHADOWS
       // =======================================================================
       if (clampedStart <= 4) {
         scheduleAt(36000, () => {
           const c = callbacksRef.current;
           setTourActIndex(4);
-          setTourStatusText('ACT V/V (∞ LOOP) · ASSOCIAHEDRON EXACT 3D → PROJECTED SHADOW (M05)');
+          setTourStatusText('ACT V/V (∞ LOOP) · ASSOCIAHEDRON EXACT 3D → 4D/5D SHADOWS (M05)');
           setTourNarration(
-            'n = 4: 14 Loday vertices, V14 E21 F9 χ = 2 — embedded isometrically, no projection. Proof: scaffold, unverified.'
+            'n = 4: 14 Loday vertices, V14 E21 F9 χ = 2 — embedded isometrically in 3D, zero projection.'
           );
           c.onSelectMode('associahedron');
           c.onHighlightSlider(0);
           c.onChangeUniform('associahedronOrder', 4.0);
           c.onChangeUniform('projectionSweep', 0.0);
-          c.onChangeUniform('facetResidueFocus', 0.15);
+          c.onChangeUniform('facetResidueFocus', 0.25);
         });
-        scheduleAt(38800, () => {
+        scheduleAt(38600, () => {
           const c = callbacksRef.current;
           setTourNarration(
-            'n = 5: 42 points live in 4D — what you now see is a PROJECTED 3D shadow, one true hull per angle.'
+            'n = 5: 42 Catalan trees in ℝ⁵ — sweeping 24 independently hulled 4D → 3D projected shadows!'
           );
           c.onChangeUniform('associahedronOrder', 5.0);
           c.onHighlightSlider(1);
-          c.onAnimateUniform('projectionSweep', 1.0, 3200);
+          c.onAnimateUniform('projectionSweep', 1.0, 2600);
         });
-        scheduleAt(42400, () => {
+        scheduleAt(41400, () => {
           const c = callbacksRef.current;
           setTourNarration(
-            'Back to n = 4: the only order rendered exactly — Seamless Loop restarting at Act I...'
+            'n = 6: 132 Catalan vertices in ℝ⁶ (5D shadow) + ABHY pole sheen — before returning to exact n = 4...'
+          );
+          c.onChangeUniform('associahedronOrder', 6.0);
+          c.onHighlightSlider(2);
+          c.onAnimateUniform('projectionSweep', 0.15, 2100);
+          c.onAnimateUniform('facetResidueFocus', 0.9, 2100);
+        });
+        scheduleAt(43700, () => {
+          const c = callbacksRef.current;
+          setTourNarration(
+            'Restoring exact 3D Loday crystal (n = 4, V14 E21 F9) — Seamless Loop restarting at Act I...'
           );
           c.onChangeUniform('associahedronOrder', 4.0);
-          c.onHighlightSlider(2);
-          c.onAnimateUniform('facetResidueFocus', 0.85, 2200);
+          c.onHighlightSlider(0);
+          c.onAnimateUniform('facetResidueFocus', 0.15, 1100);
         });
       }
 

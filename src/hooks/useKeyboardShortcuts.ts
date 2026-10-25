@@ -18,7 +18,7 @@ export interface KeyboardShortcutHandlers {
 }
 
 /**
- * Global keyboard shortcut hook for Sub-Spacetime Studio (`⌘K`, `⌘P`, `1-4`, `Num 0/7/1/3/.`, `H`, `Z`, `M`, `+/-`, `R`, `Space`, `G`, `O`)
+ * Global keyboard shortcut hook for Sub-Spacetime Studio (`⌘K`, `⌘P`, `1-5`, `Num 0/7/1/3/.`, `H`, `Z`, `M`, `+/-`, `R`, `Space`, `G`, `O`)
  */
 export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers): void {
   const handlersRef = useRef(handlers);
