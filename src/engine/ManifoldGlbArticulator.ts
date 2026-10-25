@@ -7,6 +7,7 @@ import {
   clampOrder
 } from '../data/associahedronInvariants';
 import { resolveFrameIndex } from '../data/associahedronFrameAudit';
+import { createStudioEnvMap } from './env/studioEnv';
 
 export interface ManifoldHostGroups {
   observerGroup: THREE.Group;
@@ -88,6 +89,7 @@ export class ManifoldGlbArticulator {
   private cksGlbGroup: THREE.Group | null = null;
   private k3GlbGroup: THREE.Group | null = null;
   private assoGlbGroup: THREE.Group | null = null;
+  private assoStudioEnv: THREE.CubeTexture | null = null;
   /** order -> frames (one true hull per projection angle); n=4 has a single frame */
   private assoFrames: Map<number, AssoFrameRecord[]> = new Map();
   private assoActiveKey = '';
@@ -98,6 +100,7 @@ export class ManifoldGlbArticulator {
   public loadAllManifolds(hosts: ManifoldHostGroups): void {
     const loader = new GLTFLoader();
     this.assoVertexMat = hosts.associahedronVertexMat ?? null;
+    this.assoStudioEnv = createStudioEnvMap();
 
     // 1. M01: F348 Einstein 4-Saddle + CliffordCore (ShapeKey: Singularity_Collapse) + 5 Hopf Villarceau Rings
     loader.load(
@@ -269,19 +272,24 @@ export class ManifoldGlbArticulator {
           const accent = accents[order];
           const isCage = mesh.name.includes('_Cage');
 
-          // Diffuse-forward dielectric with jewel clearcoat and iridescent sheen.
-          // Lit with controlled specular gloss, balanced emissive core, and crisp
-          // facet differentiation.
+          // Jewel dielectric lit by a studio ENV MAP, not point-light specular.
+          // Each facet has one normal, so the reflected ray is constant across the
+          // facet: an env map gives every face a single clean reflection and the
+          // highlight travels as the module tumbles. Point lights produced round
+          // blobs that read as dents in a flat plane, so they carry only a gentle
+          // diffuse term now.
           mesh.material = new THREE.MeshPhysicalMaterial({
             color: isCage ? 0x94a3b8 : accent,
             emissive: isCage ? 0x0f172a : accent,
-            emissiveIntensity: isCage ? 0.05 : 0.22,
-            metalness: 0.08,
-            roughness: 0.28,
-            clearcoat: 0.85,
-            clearcoatRoughness: 0.12,
-            iridescence: 0.45,
-            iridescenceIOR: 1.33,
+            emissiveIntensity: isCage ? 0.05 : 0.14,
+            metalness: 0.26,
+            roughness: 0.16,
+            clearcoat: 0.9,
+            clearcoatRoughness: 0.1,
+            iridescence: 0.5,
+            iridescenceIOR: 1.35,
+            envMap: this.assoStudioEnv,
+            envMapIntensity: isCage ? 0.35 : 1.15,
             flatShading: true,
             transparent: false,
             depthWrite: true,
