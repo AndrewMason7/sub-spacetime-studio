@@ -160,42 +160,28 @@ function evaluateTourSnapshot(tMs: number): TourSnapshot {
     };
   }
 
-  // ACT V (36.0s – 45.0s): M05 · ASSOCIAHEDRON — EXACT 3D, THEN 4D & 5D SHADOWS
+  // ACT V (36.0s – 45.0s): M05 · ASSOCIAHEDRON — EXACT 3D LODAY CRYSTAL (n = 4)
   const narration =
-    t < 38600
+    t < 39000
       ? 'n = 4: 14 Loday vertices, V14 E21 F9 χ = 2 — embedded isometrically in 3D, zero projection.'
-      : t < 41400
-        ? 'n = 5: 42 Catalan trees in ℝ⁵ — sweeping 24 independently hulled 4D → 3D projected shadows!'
-        : t < 43700
-          ? 'n = 6: 132 Catalan vertices in ℝ⁶ (5D shadow) + ABHY pole sheen — before returning to exact n = 4...'
-          : 'Restoring exact 3D Loday crystal (n = 4, V14 E21 F9) — Seamless Loop restarting at Act I...';
+      : t < 42400
+        ? 'Sweeping ABHY Canonical-Form Pole Sheen (Ω → 0.92): each facet of the 3D crystal is a φ³ scattering pole!'
+        : '360° Multi-Axis Tumble of the exact 14-vertex Loday polytope — Seamless Loop restarting at Act I...';
 
-  const associahedronOrder =
-    t < 38600
-      ? 4.0
-      : t < 41400
-        ? lerpEased(t, 38600, 900, 4.0, 5.0)
-        : t < 43700
-          ? lerpEased(t, 41400, 900, 5.0, 6.0)
-          : lerpEased(t, 43700, 900, 6.0, 4.0);
-  const projectionSweep =
-    t < 38600
-      ? 0.0
-      : t < 41400
-        ? lerpEased(t, 38600, 2600, 0.0, 1.0)
-        : lerpEased(t, 41400, 2100, 1.0, 0.15);
+  const associahedronOrder = 4.0;
+  const projectionSweep = lerpEased(t, 36000, 9000, 0.0, 1.0);
   const facetResidueFocus =
-    t < 41400
-      ? 0.25
-      : t < 43700
-        ? lerpEased(t, 41400, 2100, 0.25, 0.9)
-        : lerpEased(t, 43700, 1100, 0.9, 0.15);
-  const highlightSlider = t < 38600 ? 0 : t < 41400 ? 1 : t < 43700 ? 2 : 0;
+    t < 39000
+      ? lerpEased(t, 36000, 2800, 0.15, 0.45)
+      : t < 42400
+        ? lerpEased(t, 39000, 3200, 0.45, 0.92)
+        : lerpEased(t, 42400, 2400, 0.92, 0.18);
+  const highlightSlider = t < 39000 ? 0 : 2;
 
   return {
     actIndex: 4,
     mode: 'associahedron',
-    statusText: 'ACT V/V (∞ LOOP) · ASSOCIAHEDRON EXACT 3D → 4D/5D SHADOWS (M05)',
+    statusText: 'ACT V/V (∞ LOOP) · ASSOCIAHEDRON EXACT 3D LODAY CRYSTAL (M05)',
     narration,
     highlightSlider,
     uniforms: {
@@ -453,12 +439,12 @@ export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourS
       });
 
       // =======================================================================
-      // ACT V (36.0s – 45.0s): M05 · ASSOCIAHEDRON — EXACT 3D, THEN 4D & 5D SHADOWS
+      // ACT V (36.0s – 45.0s): M05 · ASSOCIAHEDRON — EXACT 3D LODAY CRYSTAL (n = 4)
       // =======================================================================
       scheduleAt(36000, () => {
         const c = callbacksRef.current;
         setTourActIndex(4);
-        setTourStatusText('ACT V/V (∞ LOOP) · ASSOCIAHEDRON EXACT 3D → 4D/5D SHADOWS (M05)');
+        setTourStatusText('ACT V/V (∞ LOOP) · ASSOCIAHEDRON EXACT 3D LODAY CRYSTAL (M05)');
         setTourNarration(
           'n = 4: 14 Loday vertices, V14 E21 F9 χ = 2 — embedded isometrically in 3D, zero projection.'
         );
@@ -467,36 +453,26 @@ export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourS
         c.onHighlightSlider(0);
         c.onChangeUniform('associahedronOrder', 4.0);
         c.onChangeUniform('projectionSweep', 0.0);
-        c.onChangeUniform('facetResidueFocus', 0.25);
+        c.onChangeUniform('facetResidueFocus', 0.15);
       });
-      scheduleAt(38600, () => {
+      scheduleTween(36000, 9000, 'projectionSweep', 0.0, 1.0);
+      scheduleTween(36000, 2800, 'facetResidueFocus', 0.15, 0.45);
+      scheduleAt(39000, () => {
         const c = callbacksRef.current;
         setTourNarration(
-          'n = 5: 42 Catalan trees in ℝ⁵ — sweeping 24 independently hulled 4D → 3D projected shadows!'
-        );
-        c.onHighlightSlider(1);
-      });
-      scheduleTween(38600, 900, 'associahedronOrder', 4.0, 5.0);
-      scheduleTween(38600, 2600, 'projectionSweep', 0.0, 1.0);
-      scheduleAt(41400, () => {
-        const c = callbacksRef.current;
-        setTourNarration(
-          'n = 6: 132 Catalan vertices in ℝ⁶ (5D shadow) + ABHY pole sheen — before returning to exact n = 4...'
+          'Sweeping ABHY Canonical-Form Pole Sheen (Ω → 0.92): each facet of the 3D crystal is a φ³ scattering pole!'
         );
         c.onHighlightSlider(2);
       });
-      scheduleTween(41400, 900, 'associahedronOrder', 5.0, 6.0);
-      scheduleTween(41400, 2100, 'projectionSweep', 1.0, 0.15);
-      scheduleTween(41400, 2100, 'facetResidueFocus', 0.25, 0.9);
-      scheduleAt(43700, () => {
+      scheduleTween(39000, 3200, 'facetResidueFocus', 0.45, 0.92);
+      scheduleAt(42400, () => {
         const c = callbacksRef.current;
         setTourNarration(
-          'Restoring exact 3D Loday crystal (n = 4, V14 E21 F9) — Seamless Loop restarting at Act I...'
+          '360° Multi-Axis Tumble of the exact 14-vertex Loday polytope — Seamless Loop restarting at Act I...'
         );
-        c.onHighlightSlider(0);
+        c.onHighlightSlider(2);
       });
-      scheduleTween(43700, 900, 'associahedronOrder', 6.0, 4.0);
-      scheduleTween(43700, 1100, 'facetResidueFocus', 0.9, 0.15);
+      scheduleTween(42400, 2400, 'facetResidueFocus', 0.92, 0.18);
 
       // SEAMLESS INFINITE LOOP: Restart from Act 0 unless the user stopped the tour!
       scheduleAt(TOTAL_TOUR_DURATION_MS, () => {
