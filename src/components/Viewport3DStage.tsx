@@ -53,6 +53,7 @@ interface Viewport3DStageProps {
   tourProgressPct?: number;
   tourNarration?: string | null;
   onJumpToTourAct?: (actIdx: number) => void;
+  onScrubDirectorTour?: (pct: number) => void;
   onStopDirectorTour?: () => void;
   isMuted?: boolean;
   onToggleMute?: () => void;
@@ -92,6 +93,7 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
   tourProgressPct = 0,
   tourNarration = null,
   onJumpToTourAct,
+  onScrubDirectorTour,
   onStopDirectorTour,
   isMuted = false,
   onToggleMute,
@@ -276,13 +278,41 @@ export const Viewport3DStage: React.FC<Viewport3DStageProps> = ({
                   <div className="director-narration-line">{tourNarration}</div>
                 )}
 
-                <div className="director-progress-track">
+                <div
+                  className="director-progress-track"
+                  title="Drag or click to scrub forward and backward through the 45s Director's Cut Tour"
+                >
                   <div
                     className="director-progress-fill"
                     style={{
                       width: `${tourProgressPct}%`,
                       background: `linear-gradient(90deg, #38bdf8, ${meta.statusColor})`
                     }}
+                  />
+                  {[20, 40, 60, 80].map((mark) => (
+                    <span
+                      key={mark}
+                      className="director-act-tick"
+                      style={{ left: `${mark}%` }}
+                    />
+                  ))}
+                  <div
+                    className="director-progress-thumb"
+                    style={{
+                      left: `${tourProgressPct}%`,
+                      borderColor: meta.statusColor,
+                      boxShadow: `0 0 10px ${meta.statusColor}`
+                    }}
+                  />
+                  <input
+                    type="range"
+                    className="director-scrubber-input"
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    value={tourProgressPct}
+                    aria-label="Scrub Director's Cut Tour timeline"
+                    onChange={(e) => onScrubDirectorTour?.(parseFloat(e.target.value))}
                   />
                 </div>
               </motion.div>

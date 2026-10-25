@@ -28,16 +28,182 @@ export interface DirectorTourState {
   tourNarration: string | null;
   startDirectorTour: (startAct?: number) => void;
   jumpToTourAct: (actIdx: number) => void;
+  scrubDirectorTour: (pct: number) => void;
   stopDirectorTour: () => void;
 }
 
 const ACT_DURATION_MS = 9000;
 const TOTAL_ACTS = 5;
+const TOTAL_TOUR_DURATION_MS = TOTAL_ACTS * ACT_DURATION_MS;
+
+const easeOutCubic = (t: number): number => {
+  const clamped = Math.max(0, Math.min(1, t));
+  return 1 - Math.pow(1 - clamped, 3);
+};
+
+const lerpEased = (
+  elapsedMs: number,
+  startMs: number,
+  durationMs: number,
+  from: number,
+  to: number
+): number => {
+  if (elapsedMs <= startMs) return from;
+  if (elapsedMs >= startMs + durationMs) return to;
+  return from + (to - from) * easeOutCubic((elapsedMs - startMs) / durationMs);
+};
+
+interface TourSnapshot {
+  actIndex: number;
+  mode: SceneModeId;
+  statusText: string;
+  narration: string;
+  highlightSlider: number;
+  uniforms: Partial<SimulationUniformState>;
+}
+
+/**
+ * Evaluates the exact deterministic Director's Cut Tour state at any millisecond
+ * `tMs` in [0, 45000] so the user can smoothly scrub forward and backward across
+ * all 5 acts!
+ */
+function evaluateTourSnapshot(tMs: number): TourSnapshot {
+  const t = Math.max(0, Math.min(TOTAL_TOUR_DURATION_MS, tMs));
+
+  // ACT I (0.0s – 9.0s): M01 · OBSERVER HILBERT HOLOGRAM & EINSTEIN SADDLE
+  if (t < 9000) {
+    const narration =
+      t < 1200
+        ? 'Without an internal Observer (S_Ob = 0), a closed universe collapses to dim(𝓗) = 1...'
+        : t < 5000
+          ? 'Injecting Observer Worldline (S_Ob → 10.8): 360° Orbital Sweep of 5 Interlocked Hopf Villarceau Rings!'
+          : 'Tumbling F348 Einstein 4-Manifold Saddle across X/Y/Z axes: Round S⁴ → Fubini–Study ℂℙ² → ℝℙ⁴';
+
+    return {
+      actIndex: 0,
+      mode: 'observer',
+      statusText: 'ACT I/V (∞ LOOP) · OBSERVER HILBERT 360° TUMBLE (M01)',
+      narration,
+      highlightSlider: t < 5000 ? 0 : 2,
+      uniforms: {
+        observerEntropy: lerpEased(t, 1200, 3600, 0.0, 10.8),
+        wormholeCoupling: 1.0,
+        manifoldMorph: lerpEased(t, 5000, 3400, 0.65, 1.75)
+      }
+    };
+  }
+
+  // ACT II (9.0s – 18.0s): M02 · FK-CRT CRITICAL PHASE TRANSITION AT q = 4
+  if (t < 18000) {
+    const narration =
+      t < 10800
+        ? 'Subcritical Regime (q = 1.8 ≤ 4.0): Smooth Liouville Quantum Gravity Sphere (d_H = 4.0)...'
+        : t < 15000
+          ? 'Crossing Critical Threshold q = 4.0 → 7.4: 360° Side & Polar View of Fractal Aldous CRT Spines (d_H = 2)!'
+          : 'Inspecting 3D Bessel Bridge Excursion ||B_t - t B_1||_3 from all angles...';
+
+    return {
+      actIndex: 1,
+      mode: 'fkcrt',
+      statusText: 'ACT II/V (∞ LOOP) · FK-CRT PHASE TRANSITION AT q = 4.0 (M02)',
+      narration,
+      highlightSlider: t < 15000 ? 0 : 1,
+      uniforms: {
+        clusterParameterQ: lerpEased(t, 10800, 3800, 1.8, 7.4),
+        excursionRoughness: lerpEased(t, 15000, 2500, 1.15, 1.85),
+        planarEdgesN: 3.2
+      }
+    };
+  }
+
+  // ACT III (18.0s – 27.0s): M03 · CKS HORIZON & 105-QUBIT WILLOW SURFACE CODE
+  if (t < 27000) {
+    const narration =
+      t < 20000
+        ? 'CKSBondiPenrose.lean: Tilting 3D Carter Funnel to reveal full hyperboloidal gravity well profile...'
+        : '360° Crane Orbit around Kerr Ergosphere, Lense–Thirring Torus & Precessing 3M Photon Geodesic!';
+
+    return {
+      actIndex: 2,
+      mode: 'hologram',
+      statusText: 'ACT III/V (∞ LOOP) · CKS KERR FUNNEL 360° PROFILE (M03)',
+      narration,
+      highlightSlider: t < 22800 ? 0 : t < 25200 ? 1 : 2,
+      uniforms: {
+        bondiMass: lerpEased(t, 20000, 3800, 0.85, 2.25),
+        boundaryQubitFlux: lerpEased(t, 20000, 3800, 1.6, 2.85),
+        kerrSpin: lerpEased(t, 20000, 3800, 0.72, 0.95)
+      }
+    };
+  }
+
+  // ACT IV (27.0s – 36.0s): M04 · F032 SIGN-ERROR K3 STABILIZATION SHATTER
+  if (t < 36000) {
+    const narration =
+      t < 29000
+        ? 'Unverified PDF Draft Assumption (+1 Sign): Smooth Hanson Fermat Quintic Calabi–Yau Slice...'
+        : t < 32500
+          ? 'Injecting Cusp Reality (-1 Sign): I_new = -2m ≠ 0 — 360° Tumble of Shattering K3 & Cusp Loci!'
+          : 'Lean 4 `omega` catches the sign error in 0.01s — next: a geometry that is exact, not a metaphor...';
+
+    return {
+      actIndex: 3,
+      mode: 'retraction',
+      statusText: 'ACT IV/V (∞ LOOP) · F032 K3 QUINTIC SHATTER (+1 → -1) (M04)',
+      narration,
+      highlightSlider: 0,
+      uniforms: {
+        stabilizationSign: lerpEased(t, 29000, 2600, 1.0, -1.0),
+        doublePointCountM: 6.0,
+        calabiYauSlice: 1.57
+      }
+    };
+  }
+
+  // ACT V (36.0s – 45.0s): M05 · ASSOCIAHEDRON — EXACT 3D, THEN 4D & 5D SHADOWS
+  const narration =
+    t < 38600
+      ? 'n = 4: 14 Loday vertices, V14 E21 F9 χ = 2 — embedded isometrically in 3D, zero projection.'
+      : t < 41400
+        ? 'n = 5: 42 Catalan trees in ℝ⁵ — sweeping 24 independently hulled 4D → 3D projected shadows!'
+        : t < 43700
+          ? 'n = 6: 132 Catalan vertices in ℝ⁶ (5D shadow) + ABHY pole sheen — before returning to exact n = 4...'
+          : 'Restoring exact 3D Loday crystal (n = 4, V14 E21 F9) — Seamless Loop restarting at Act I...';
+
+  const associahedronOrder = t < 38600 ? 4.0 : t < 41400 ? 5.0 : t < 43700 ? 6.0 : 4.0;
+  const projectionSweep =
+    t < 38600
+      ? 0.0
+      : t < 41400
+        ? lerpEased(t, 38600, 2600, 0.0, 1.0)
+        : lerpEased(t, 41400, 2100, 1.0, 0.15);
+  const facetResidueFocus =
+    t < 41400
+      ? 0.25
+      : t < 43700
+        ? lerpEased(t, 41400, 2100, 0.25, 0.9)
+        : lerpEased(t, 43700, 1100, 0.9, 0.15);
+  const highlightSlider = t < 38600 ? 0 : t < 41400 ? 1 : t < 43700 ? 2 : 0;
+
+  return {
+    actIndex: 4,
+    mode: 'associahedron',
+    statusText: 'ACT V/V (∞ LOOP) · ASSOCIAHEDRON EXACT 3D → 4D/5D SHADOWS (M05)',
+    narration,
+    highlightSlider,
+    uniforms: {
+      associahedronOrder,
+      projectionSweep,
+      facetResidueFocus
+    }
+  };
+}
 
 /**
  * v9.0 Choreographed 360° Orbital Crane & Multi-Axis Tumbling Director's Cut Tour (Infinite Loop ∞):
  * - Continuously orbits 360° around and tumbles each 3D manifold across X/Y/Z axes so the user
  *   sees the sides, poles, interior cross-sections, and underbelly of every geometry.
+ * - Supports full interactive timeline scrubbing forward and backward across [0%, 100%].
  * - Automatically loops back to Act I after Act V until explicitly stopped by the user.
  */
 export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourState {
@@ -53,6 +219,7 @@ export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourS
   const directorTimerRef = useRef<number[]>([]);
   const progressIntervalRef = useRef<number | null>(null);
   const isRunningRef = useRef<boolean>(false);
+  const lastModeRef = useRef<SceneModeId | null>(null);
 
   const clearTimers = useCallback(() => {
     directorTimerRef.current.forEach((id) => clearTimeout(id));
@@ -66,6 +233,7 @@ export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourS
   const stopDirectorTour = useCallback(() => {
     if (!isRunningRef.current && !isDirectorRunning) return;
     isRunningRef.current = false;
+    lastModeRef.current = null;
     clearTimers();
     callbacksRef.current.onCancelUniformAnimations?.();
     setIsDirectorRunning(false);
@@ -77,231 +245,270 @@ export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourS
     callbacksRef.current.onDirectorActiveChange?.(false);
   }, [clearTimers, isDirectorRunning]);
 
-  const startDirectorTour = useCallback(
-    (startAct = 0) => {
+  const startDirectorTourFromMs = useCallback(
+    (startElapsedMs = 0) => {
       clearTimers();
       const cb = callbacksRef.current;
       cb.onCancelUniformAnimations?.();
       cb.onInitAudio();
       isRunningRef.current = true;
 
-      const clampedStart = Math.max(0, Math.min(TOTAL_ACTS - 1, startAct));
+      const clampedStartMs = Math.max(0, Math.min(TOTAL_TOUR_DURATION_MS - 10, startElapsedMs));
+      const snap = evaluateTourSnapshot(clampedStartMs);
+
       setIsDirectorRunning(true);
-      setTourActIndex(clampedStart);
+      setTourActIndex(snap.actIndex);
+      setTourStatusText(snap.statusText);
+      setTourNarration(snap.narration);
+      setTourProgressPct((clampedStartMs / TOTAL_TOUR_DURATION_MS) * 100);
       cb.onDirectorActiveChange?.(true);
 
-      const tourStartWall = performance.now() - clampedStart * ACT_DURATION_MS;
-      const totalTourDuration = TOTAL_ACTS * ACT_DURATION_MS;
+      if (lastModeRef.current !== snap.mode) {
+        lastModeRef.current = snap.mode;
+        cb.onSelectMode(snap.mode);
+      }
+      cb.onHighlightSlider(snap.highlightSlider);
+      for (const [key, val] of Object.entries(snap.uniforms)) {
+        if (typeof val === 'number') {
+          cb.onChangeUniform(key as keyof SimulationUniformState, val);
+        }
+      }
+
+      const tourStartWall = performance.now() - clampedStartMs;
 
       progressIntervalRef.current = window.setInterval(() => {
         const elapsed = performance.now() - tourStartWall;
-        const pct = Math.max(0, Math.min(100, (elapsed / totalTourDuration) * 100));
+        const pct = Math.max(0, Math.min(100, (elapsed / TOTAL_TOUR_DURATION_MS) * 100));
         setTourProgressPct(pct);
-      }, 60);
+      }, 50);
 
       const scheduleAt = (absMs: number, fn: () => void) => {
-        const relMs = absMs - clampedStart * ACT_DURATION_MS;
-        if (relMs < -50) return;
+        const relMs = absMs - clampedStartMs;
+        if (relMs <= 0) return;
         const id = window.setTimeout(() => {
           if (!isRunningRef.current) return;
           fn();
-        }, Math.max(0, relMs));
+        }, relMs);
         directorTimerRef.current.push(id);
+      };
+
+      const scheduleTween = (
+        startMs: number,
+        durationMs: number,
+        key: keyof SimulationUniformState,
+        fromVal: number,
+        toVal: number
+      ) => {
+        const endMs = startMs + durationMs;
+        if (clampedStartMs >= endMs) return;
+        if (clampedStartMs > startMs) {
+          const remainingMs = endMs - clampedStartMs;
+          const id = window.setTimeout(() => {
+            if (!isRunningRef.current) return;
+            callbacksRef.current.onAnimateUniform(key, toVal, remainingMs);
+          }, 0);
+          directorTimerRef.current.push(id);
+        } else {
+          scheduleAt(startMs, () => {
+            callbacksRef.current.onChangeUniform(key, fromVal);
+            callbacksRef.current.onAnimateUniform(key, toVal, durationMs);
+          });
+        }
       };
 
       // =======================================================================
       // ACT I (0.0s – 9.0s): M01 · OBSERVER HILBERT HOLOGRAM & EINSTEIN SADDLE
       // =======================================================================
-      if (clampedStart <= 0) {
-        scheduleAt(0, () => {
-          const c = callbacksRef.current;
-          setTourActIndex(0);
-          setTourStatusText('ACT I/V (∞ LOOP) · OBSERVER HILBERT 360° TUMBLE (M01)');
-          setTourNarration(
-            'Without an internal Observer (S_Ob = 0), a closed universe collapses to dim(𝓗) = 1...'
-          );
-          c.onSelectMode('observer');
-          c.onHighlightSlider(0);
-          c.onChangeUniform('observerEntropy', 0.0);
-          c.onChangeUniform('wormholeCoupling', 1.0);
-          c.onChangeUniform('manifoldMorph', 0.65);
-        });
-        scheduleAt(1200, () => {
-          const c = callbacksRef.current;
-          setTourNarration(
-            'Injecting Observer Worldline (S_Ob → 10.8): 360° Orbital Sweep of 5 Interlocked Hopf Villarceau Rings!'
-          );
-          c.onAnimateUniform('observerEntropy', 10.8, 3600);
-        });
-        scheduleAt(5000, () => {
-          const c = callbacksRef.current;
-          setTourNarration(
-            'Tumbling F348 Einstein 4-Manifold Saddle across X/Y/Z axes: Round S⁴ → Fubini–Study ℂℙ² → ℝℙ⁴'
-          );
-          c.onHighlightSlider(2);
-          c.onAnimateUniform('manifoldMorph', 1.75, 3400);
-        });
-      }
+      scheduleAt(0, () => {
+        const c = callbacksRef.current;
+        setTourActIndex(0);
+        setTourStatusText('ACT I/V (∞ LOOP) · OBSERVER HILBERT 360° TUMBLE (M01)');
+        setTourNarration(
+          'Without an internal Observer (S_Ob = 0), a closed universe collapses to dim(𝓗) = 1...'
+        );
+        lastModeRef.current = 'observer';
+        c.onSelectMode('observer');
+        c.onHighlightSlider(0);
+        c.onChangeUniform('observerEntropy', 0.0);
+        c.onChangeUniform('wormholeCoupling', 1.0);
+        c.onChangeUniform('manifoldMorph', 0.65);
+      });
+      scheduleAt(1200, () => {
+        setTourNarration(
+          'Injecting Observer Worldline (S_Ob → 10.8): 360° Orbital Sweep of 5 Interlocked Hopf Villarceau Rings!'
+        );
+      });
+      scheduleTween(1200, 3600, 'observerEntropy', 0.0, 10.8);
+      scheduleAt(5000, () => {
+        const c = callbacksRef.current;
+        setTourNarration(
+          'Tumbling F348 Einstein 4-Manifold Saddle across X/Y/Z axes: Round S⁴ → Fubini–Study ℂℙ² → ℝℙ⁴'
+        );
+        c.onHighlightSlider(2);
+      });
+      scheduleTween(5000, 3400, 'manifoldMorph', 0.65, 1.75);
 
       // =======================================================================
       // ACT II (9.0s – 18.0s): M02 · FK-CRT CRITICAL PHASE TRANSITION AT q = 4
       // =======================================================================
-      if (clampedStart <= 1) {
-        scheduleAt(9000, () => {
-          const c = callbacksRef.current;
-          setTourActIndex(1);
-          setTourStatusText('ACT II/V (∞ LOOP) · FK-CRT PHASE TRANSITION AT q = 4.0 (M02)');
-          setTourNarration(
-            'Subcritical Regime (q = 1.8 ≤ 4.0): Smooth Liouville Quantum Gravity Sphere (d_H = 4.0)...'
-          );
-          c.onSelectMode('fkcrt');
-          c.onHighlightSlider(0);
-          c.onChangeUniform('clusterParameterQ', 1.8);
-          c.onChangeUniform('excursionRoughness', 1.15);
-          c.onChangeUniform('planarEdgesN', 3.2);
-        });
-        scheduleAt(10800, () => {
-          const c = callbacksRef.current;
-          setTourNarration(
-            'Crossing Critical Threshold q = 4.0 → 7.4: 360° Side & Polar View of Fractal Aldous CRT Spines (d_H = 2)!'
-          );
-          c.onAnimateUniform('clusterParameterQ', 7.4, 3800);
-        });
-        scheduleAt(15000, () => {
-          const c = callbacksRef.current;
-          setTourNarration(
-            'Inspecting 3D Bessel Bridge Excursion ||B_t - t B_1||_3 from all angles...'
-          );
-          c.onHighlightSlider(1);
-          c.onAnimateUniform('excursionRoughness', 1.85, 2500);
-        });
-      }
+      scheduleAt(9000, () => {
+        const c = callbacksRef.current;
+        setTourActIndex(1);
+        setTourStatusText('ACT II/V (∞ LOOP) · FK-CRT PHASE TRANSITION AT q = 4.0 (M02)');
+        setTourNarration(
+          'Subcritical Regime (q = 1.8 ≤ 4.0): Smooth Liouville Quantum Gravity Sphere (d_H = 4.0)...'
+        );
+        lastModeRef.current = 'fkcrt';
+        c.onSelectMode('fkcrt');
+        c.onHighlightSlider(0);
+        c.onChangeUniform('clusterParameterQ', 1.8);
+        c.onChangeUniform('excursionRoughness', 1.15);
+        c.onChangeUniform('planarEdgesN', 3.2);
+      });
+      scheduleAt(10800, () => {
+        setTourNarration(
+          'Crossing Critical Threshold q = 4.0 → 7.4: 360° Side & Polar View of Fractal Aldous CRT Spines (d_H = 2)!'
+        );
+      });
+      scheduleTween(10800, 3800, 'clusterParameterQ', 1.8, 7.4);
+      scheduleAt(15000, () => {
+        const c = callbacksRef.current;
+        setTourNarration(
+          'Inspecting 3D Bessel Bridge Excursion ||B_t - t B_1||_3 from all angles...'
+        );
+        c.onHighlightSlider(1);
+      });
+      scheduleTween(15000, 2500, 'excursionRoughness', 1.15, 1.85);
 
       // =======================================================================
       // ACT III (18.0s – 27.0s): M03 · CKS HORIZON & 105-QUBIT WILLOW SURFACE CODE
       // =======================================================================
-      if (clampedStart <= 2) {
-        scheduleAt(18000, () => {
-          const c = callbacksRef.current;
-          setTourActIndex(2);
-          setTourStatusText('ACT III/V (∞ LOOP) · CKS KERR FUNNEL 360° PROFILE (M03)');
-          setTourNarration(
-            'CKSBondiPenrose.lean: Tilting 3D Carter Funnel to reveal full hyperboloidal gravity well profile...'
-          );
-          c.onSelectMode('hologram');
-          c.onHighlightSlider(0);
-          c.onChangeUniform('bondiMass', 0.85);
-          c.onChangeUniform('boundaryQubitFlux', 1.6);
-          c.onChangeUniform('kerrSpin', 0.72);
-        });
-        scheduleAt(20000, () => {
-          const c = callbacksRef.current;
-          setTourNarration(
-            '360° Crane Orbit around Kerr Ergosphere, Lense–Thirring Torus & Precessing 3M Photon Geodesic!'
-          );
-          c.onHighlightSlider(0);
-          c.onAnimateUniform('bondiMass', 2.25, 3800);
-          c.onAnimateUniform('boundaryQubitFlux', 2.85, 3800);
-          c.onAnimateUniform('kerrSpin', 0.95, 3800);
-        });
-        scheduleAt(22800, () => {
-          const c = callbacksRef.current;
-          c.onHighlightSlider(1);
-        });
-        scheduleAt(25200, () => {
-          const c = callbacksRef.current;
-          c.onHighlightSlider(2);
-        });
-      }
+      scheduleAt(18000, () => {
+        const c = callbacksRef.current;
+        setTourActIndex(2);
+        setTourStatusText('ACT III/V (∞ LOOP) · CKS KERR FUNNEL 360° PROFILE (M03)');
+        setTourNarration(
+          'CKSBondiPenrose.lean: Tilting 3D Carter Funnel to reveal full hyperboloidal gravity well profile...'
+        );
+        lastModeRef.current = 'hologram';
+        c.onSelectMode('hologram');
+        c.onHighlightSlider(0);
+        c.onChangeUniform('bondiMass', 0.85);
+        c.onChangeUniform('boundaryQubitFlux', 1.6);
+        c.onChangeUniform('kerrSpin', 0.72);
+      });
+      scheduleAt(20000, () => {
+        const c = callbacksRef.current;
+        setTourNarration(
+          '360° Crane Orbit around Kerr Ergosphere, Lense–Thirring Torus & Precessing 3M Photon Geodesic!'
+        );
+        c.onHighlightSlider(0);
+      });
+      scheduleTween(20000, 3800, 'bondiMass', 0.85, 2.25);
+      scheduleTween(20000, 3800, 'boundaryQubitFlux', 1.6, 2.85);
+      scheduleTween(20000, 3800, 'kerrSpin', 0.72, 0.95);
+      scheduleAt(22800, () => {
+        callbacksRef.current.onHighlightSlider(1);
+      });
+      scheduleAt(25200, () => {
+        callbacksRef.current.onHighlightSlider(2);
+      });
 
       // =======================================================================
       // ACT IV (27.0s – 36.0s): M04 · F032 SIGN-ERROR K3 STABILIZATION SHATTER
       // =======================================================================
-      if (clampedStart <= 3) {
-        scheduleAt(27000, () => {
-          const c = callbacksRef.current;
-          setTourActIndex(3);
-          setTourStatusText('ACT IV/V (∞ LOOP) · F032 K3 QUINTIC SHATTER (+1 → -1) (M04)');
-          setTourNarration(
-            'Unverified PDF Draft Assumption (+1 Sign): Smooth Hanson Fermat Quintic Calabi–Yau Slice...'
-          );
-          c.onSelectMode('retraction');
-          c.onHighlightSlider(0);
-          c.onChangeUniform('stabilizationSign', 1.0);
-          c.onChangeUniform('doublePointCountM', 6.0);
-          c.onChangeUniform('calabiYauSlice', 1.57);
-        });
-        scheduleAt(29000, () => {
-          const c = callbacksRef.current;
-          setTourNarration(
-            'Injecting Cusp Reality (-1 Sign): I_new = -2m ≠ 0 — 360° Tumble of Shattering K3 & Cusp Loci!'
-          );
-          c.onAnimateUniform('stabilizationSign', -1.0, 2600);
-        });
-        scheduleAt(32500, () => {
-          const c = callbacksRef.current;
-          setTourNarration(
-            'Lean 4 `omega` catches the sign error in 0.01s — next: a geometry that is exact, not a metaphor...'
-          );
-          c.onHighlightSlider(0);
-        });
-      }
+      scheduleAt(27000, () => {
+        const c = callbacksRef.current;
+        setTourActIndex(3);
+        setTourStatusText('ACT IV/V (∞ LOOP) · F032 K3 QUINTIC SHATTER (+1 → -1) (M04)');
+        setTourNarration(
+          'Unverified PDF Draft Assumption (+1 Sign): Smooth Hanson Fermat Quintic Calabi–Yau Slice...'
+        );
+        lastModeRef.current = 'retraction';
+        c.onSelectMode('retraction');
+        c.onHighlightSlider(0);
+        c.onChangeUniform('stabilizationSign', 1.0);
+        c.onChangeUniform('doublePointCountM', 6.0);
+        c.onChangeUniform('calabiYauSlice', 1.57);
+      });
+      scheduleAt(29000, () => {
+        setTourNarration(
+          'Injecting Cusp Reality (-1 Sign): I_new = -2m ≠ 0 — 360° Tumble of Shattering K3 & Cusp Loci!'
+        );
+      });
+      scheduleTween(29000, 2600, 'stabilizationSign', 1.0, -1.0);
+      scheduleAt(32500, () => {
+        const c = callbacksRef.current;
+        setTourNarration(
+          'Lean 4 `omega` catches the sign error in 0.01s — next: a geometry that is exact, not a metaphor...'
+        );
+        c.onHighlightSlider(0);
+      });
 
       // =======================================================================
       // ACT V (36.0s – 45.0s): M05 · ASSOCIAHEDRON — EXACT 3D, THEN 4D & 5D SHADOWS
       // =======================================================================
-      if (clampedStart <= 4) {
-        scheduleAt(36000, () => {
-          const c = callbacksRef.current;
-          setTourActIndex(4);
-          setTourStatusText('ACT V/V (∞ LOOP) · ASSOCIAHEDRON EXACT 3D → 4D/5D SHADOWS (M05)');
-          setTourNarration(
-            'n = 4: 14 Loday vertices, V14 E21 F9 χ = 2 — embedded isometrically in 3D, zero projection.'
-          );
-          c.onSelectMode('associahedron');
-          c.onHighlightSlider(0);
-          c.onChangeUniform('associahedronOrder', 4.0);
-          c.onChangeUniform('projectionSweep', 0.0);
-          c.onChangeUniform('facetResidueFocus', 0.25);
-        });
-        scheduleAt(38600, () => {
-          const c = callbacksRef.current;
-          setTourNarration(
-            'n = 5: 42 Catalan trees in ℝ⁵ — sweeping 24 independently hulled 4D → 3D projected shadows!'
-          );
-          c.onChangeUniform('associahedronOrder', 5.0);
-          c.onHighlightSlider(1);
-          c.onAnimateUniform('projectionSweep', 1.0, 2600);
-        });
-        scheduleAt(41400, () => {
-          const c = callbacksRef.current;
-          setTourNarration(
-            'n = 6: 132 Catalan vertices in ℝ⁶ (5D shadow) + ABHY pole sheen — before returning to exact n = 4...'
-          );
-          c.onChangeUniform('associahedronOrder', 6.0);
-          c.onHighlightSlider(2);
-          c.onAnimateUniform('projectionSweep', 0.15, 2100);
-          c.onAnimateUniform('facetResidueFocus', 0.9, 2100);
-        });
-        scheduleAt(43700, () => {
-          const c = callbacksRef.current;
-          setTourNarration(
-            'Restoring exact 3D Loday crystal (n = 4, V14 E21 F9) — Seamless Loop restarting at Act I...'
-          );
-          c.onChangeUniform('associahedronOrder', 4.0);
-          c.onHighlightSlider(0);
-          c.onAnimateUniform('facetResidueFocus', 0.15, 1100);
-        });
-      }
+      scheduleAt(36000, () => {
+        const c = callbacksRef.current;
+        setTourActIndex(4);
+        setTourStatusText('ACT V/V (∞ LOOP) · ASSOCIAHEDRON EXACT 3D → 4D/5D SHADOWS (M05)');
+        setTourNarration(
+          'n = 4: 14 Loday vertices, V14 E21 F9 χ = 2 — embedded isometrically in 3D, zero projection.'
+        );
+        lastModeRef.current = 'associahedron';
+        c.onSelectMode('associahedron');
+        c.onHighlightSlider(0);
+        c.onChangeUniform('associahedronOrder', 4.0);
+        c.onChangeUniform('projectionSweep', 0.0);
+        c.onChangeUniform('facetResidueFocus', 0.25);
+      });
+      scheduleAt(38600, () => {
+        const c = callbacksRef.current;
+        setTourNarration(
+          'n = 5: 42 Catalan trees in ℝ⁵ — sweeping 24 independently hulled 4D → 3D projected shadows!'
+        );
+        c.onChangeUniform('associahedronOrder', 5.0);
+        c.onHighlightSlider(1);
+      });
+      scheduleTween(38600, 2600, 'projectionSweep', 0.0, 1.0);
+      scheduleAt(41400, () => {
+        const c = callbacksRef.current;
+        setTourNarration(
+          'n = 6: 132 Catalan vertices in ℝ⁶ (5D shadow) + ABHY pole sheen — before returning to exact n = 4...'
+        );
+        c.onChangeUniform('associahedronOrder', 6.0);
+        c.onHighlightSlider(2);
+      });
+      scheduleTween(41400, 2100, 'projectionSweep', 1.0, 0.15);
+      scheduleTween(41400, 2100, 'facetResidueFocus', 0.25, 0.9);
+      scheduleAt(43700, () => {
+        const c = callbacksRef.current;
+        setTourNarration(
+          'Restoring exact 3D Loday crystal (n = 4, V14 E21 F9) — Seamless Loop restarting at Act I...'
+        );
+        c.onChangeUniform('associahedronOrder', 4.0);
+        c.onHighlightSlider(0);
+      });
+      scheduleTween(43700, 1100, 'facetResidueFocus', 0.9, 0.15);
 
       // SEAMLESS INFINITE LOOP: Restart from Act 0 unless the user stopped the tour!
-      scheduleAt(45000, () => {
+      scheduleAt(TOTAL_TOUR_DURATION_MS, () => {
         if (isRunningRef.current) {
-          startDirectorTour(0);
+          lastModeRef.current = null;
+          startDirectorTourFromMs(0);
         }
       });
     },
     [clearTimers]
+  );
+
+  const startDirectorTour = useCallback(
+    (startAct = 0) => {
+      const clampedStart = Math.max(0, Math.min(TOTAL_ACTS - 1, startAct));
+      lastModeRef.current = null;
+      startDirectorTourFromMs(clampedStart * ACT_DURATION_MS);
+    },
+    [startDirectorTourFromMs]
   );
 
   const jumpToTourAct = useCallback(
@@ -309,6 +516,15 @@ export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourS
       startDirectorTour(actIdx);
     },
     [startDirectorTour]
+  );
+
+  const scrubDirectorTour = useCallback(
+    (pct: number) => {
+      const clampedPct = Math.max(0, Math.min(100, pct));
+      const targetMs = (clampedPct / 100) * (TOTAL_TOUR_DURATION_MS - 10);
+      startDirectorTourFromMs(targetMs);
+    },
+    [startDirectorTourFromMs]
   );
 
   useEffect(() => {
@@ -323,6 +539,7 @@ export function useDirectorTour(callbacks: DirectorTourCallbacks): DirectorTourS
     tourNarration,
     startDirectorTour,
     jumpToTourAct,
+    scrubDirectorTour,
     stopDirectorTour
   };
 }

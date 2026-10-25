@@ -347,6 +347,7 @@ const WorkstationApp: React.FC = () => {
     tourNarration,
     startDirectorTour,
     jumpToTourAct,
+    scrubDirectorTour,
     stopDirectorTour
   } = useDirectorTour({
     onInitAudio: () => audioRef.current.init(),
@@ -483,6 +484,7 @@ const WorkstationApp: React.FC = () => {
         tourProgressPct={tourProgressPct}
         tourNarration={tourNarration}
         onJumpToTourAct={jumpToTourAct}
+        onScrubDirectorTour={scrubDirectorTour}
         onStopDirectorTour={stopDirectorTour}
         isMuted={isMuted}
         onToggleMute={handleToggleMute}

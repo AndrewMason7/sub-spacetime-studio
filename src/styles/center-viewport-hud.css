@@ -378,17 +378,63 @@
 }
 
 .director-progress-track {
+  position: relative;
   width: 100%;
-  height: 4px;
+  height: 10px;
   border-radius: 999px;
-  background: rgba(2, 4, 9, 0.85);
-  overflow: hidden;
+  background: rgba(2, 4, 9, 0.9);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  cursor: ew-resize;
+  margin-top: 2px;
 }
 
 .director-progress-fill {
   height: 100%;
   border-radius: 999px;
-  transition: width 0.08s linear;
+  pointer-events: none;
+}
+
+.director-act-tick {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.22);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.director-progress-thumb {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #f8fafc;
+  border: 2px solid #fbbf24;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 3;
+  transition: transform 0.12s ease;
+}
+
+.director-progress-track:hover .director-progress-thumb {
+  transform: translate(-50%, -50%) scale(1.18);
+}
+
+.director-scrubber-input {
+  position: absolute;
+  inset: -4px 0;
+  width: 100%;
+  height: calc(100% + 8px);
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+  z-index: 5;
 }
 
 @media (max-width: 1024px) {
