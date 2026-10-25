@@ -7,7 +7,6 @@ import {
   clampOrder
 } from '../data/associahedronInvariants';
 import { resolveFrameIndex } from '../data/associahedronFrameAudit';
-import { createStudioEnvMap } from './env/studioEnv';
 
 export interface ManifoldHostGroups {
   observerGroup: THREE.Group;
@@ -26,6 +25,9 @@ interface AssoFrameRecord {
   material: THREE.MeshPhysicalMaterial;
   wireMaterial: THREE.LineBasicMaterial;
   nodes: THREE.InstancedMesh | null;
+  shaderUniforms: {
+    uAssoSweepPhase: { value: number };
+  };
 }
 
 /** radius the widest hull of each order is fitted to, in host-group units */
@@ -89,7 +91,8 @@ export class ManifoldGlbArticulator {
   private cksGlbGroup: THREE.Group | null = null;
   private k3GlbGroup: THREE.Group | null = null;
   private assoGlbGroup: THREE.Group | null = null;
-  private assoStudioEnv: THREE.CubeTexture | null = null;
+  private assoLightRig: THREE.Group | null = null;
+  private assoGrazingLight: THREE.PointLight | null = null;
   /** order -> frames (one true hull per projection angle); n=4 has a single frame */
   private assoFrames: Map<number, AssoFrameRecord[]> = new Map();
   private assoActiveKey = '';
@@ -100,7 +103,6 @@ export class ManifoldGlbArticulator {
   public loadAllManifolds(hosts: ManifoldHostGroups): void {
     const loader = new GLTFLoader();
     this.assoVertexMat = hosts.associahedronVertexMat ?? null;
-    this.assoStudioEnv = createStudioEnvMap();
 
     // 1. M01: F348 Einstein 4-Saddle + CliffordCore (ShapeKey: Singularity_Collapse) + 5 Hopf Villarceau Rings
     loader.load(
@@ -272,29 +274,117 @@ export class ManifoldGlbArticulator {
           const accent = accents[order];
           const isCage = mesh.name.includes('_Cage');
 
-          // Jewel dielectric lit by a studio ENV MAP, not point-light specular.
-          // Each facet has one normal, so the reflected ray is constant across the
-          // facet: an env map gives every face a single clean reflection and the
-          // highlight travels as the module tumbles. Point lights produced round
-          // blobs that read as dents in a flat plane, so they carry only a gentle
-          // diffuse term now.
-          mesh.material = new THREE.MeshPhysicalMaterial({
+          // Argon's jewel surface (recovered from the archived bundle index-B3-fMCmZ.js).
+          // Flat-shaded facets + sheen + a per-facet tangent frame injected into the
+          // standard shader: the tangent is the in-plane offset from the facet's pedal
+          // centre, so Fresnel and the two travelling studio strips are computed per
+          // facet rather than per pixel-across-a-plane. A soft-knee compressor keeps
+          // every facet below 0.385 linear luminance, i.e. under the 0.42 bloom threshold.
+          const shaderUniforms = { uAssoSweepPhase: { value: 0 } };
+          const mat = new THREE.MeshPhysicalMaterial({
             color: isCage ? 0x94a3b8 : accent,
             emissive: isCage ? 0x0f172a : accent,
-            emissiveIntensity: isCage ? 0.05 : 0.14,
-            metalness: 0.26,
-            roughness: 0.16,
-            clearcoat: 0.9,
-            clearcoatRoughness: 0.1,
-            iridescence: 0.5,
-            iridescenceIOR: 1.35,
-            envMap: this.assoStudioEnv,
-            envMapIntensity: isCage ? 0.35 : 1.15,
+            emissiveIntensity: isCage ? 0.05 : 0.12,
+            metalness: 0.14,
+            roughness: 0.22,
+            clearcoat: 0.92,
+            clearcoatRoughness: 0.16,
+            iridescence: 0.58,
+            iridescenceIOR: 1.38,
+            sheen: 0.62,
+            sheenRoughness: 0.24,
+            sheenColor: new THREE.Color(0x99f6e4),
             flatShading: true,
             transparent: false,
             depthWrite: true,
             side: THREE.FrontSide
           });
+
+          if (!isCage) {
+            mat.onBeforeCompile = (shader) => {
+              shader.uniforms.uAssoSweepPhase = shaderUniforms.uAssoSweepPhase;
+
+              shader.vertexShader = shader.vertexShader.replace(
+                '#include <common>',
+                `#include <common>
+                varying vec3 vAssoViewOffset;`
+              );
+              shader.vertexShader = shader.vertexShader.replace(
+                '#include <begin_vertex>',
+                `#include <begin_vertex>
+                vec3 assoWorldCenter = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+                vec3 assoWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+                vAssoViewOffset = mat3(viewMatrix) * (assoWorldPos - assoWorldCenter);`
+              );
+
+              shader.fragmentShader = shader.fragmentShader.replace(
+                '#include <common>',
+                `#include <common>
+                uniform float uAssoSweepPhase;
+                varying vec3 vAssoViewOffset;`
+              );
+
+              shader.fragmentShader = shader.fragmentShader.replace(
+                '#include <opaque_fragment>',
+                `// Exact intra-facet tangent coordinates: for a flat facet with unit normal N,
+                // dot(vAssoViewOffset, normal) is the constant support distance of that facet
+                // plane, so facetTangent is the in-plane offset from the facet's pedal centre.
+                vec3 viewDir = normalize(vViewPosition);
+                vec3 facetTangent = vAssoViewOffset - normal * dot(vAssoViewOffset, normal);
+                float facetRadial = length(facetTangent);
+                // Dispersion normal: discontinuous across crease edges, sweeps within a facet
+                vec3 optNormal = normalize(normal + 0.68 * facetTangent);
+
+                float ndotvOpt = clamp(dot(optNormal, viewDir), 0.0, 1.0);
+                // Target oblique side and lower facets, preserve the bright top cap
+                float sideMask = smoothstep(0.52, -0.05, normal.y);
+                // Carve jewelled depth into the interior of side facets
+                float interiorCarve = mix(1.0, 0.68 + 0.32 * smoothstep(0.25, 1.05, facetRadial), sideMask);
+                outgoingLight *= interiorCarve;
+
+                // 1. Grazing-angle Fresnel along outer and lower facet perimeters
+                float fresnelRim = pow(1.0 - ndotvOpt, 2.25) * smoothstep(0.18, 0.95, facetRadial);
+                float lowerRightWeight = 0.65 + 0.55 * smoothstep(-0.4, 0.9, vAssoViewOffset.x - 0.65 * vAssoViewOffset.y);
+
+                // 2. Travelling studio strips raking across side and lower facets
+                vec3 reflDir = reflect(-viewDir, optNormal);
+                float phase = uAssoSweepPhase;
+                vec3 rightStudioDir = normalize(vec3(
+                  0.64 + 0.16 * sin(phase * 0.65 - 0.8),
+                  -0.22 + 0.14 * cos(phase * 0.50),
+                  0.70
+                ));
+                vec3 lowerStudioDir = normalize(vec3(
+                  -0.28 + 0.20 * cos(phase * 0.55),
+                  -0.58 + 0.14 * sin(phase * 0.45),
+                  0.76
+                ));
+                float specRight = pow(max(0.0, dot(reflDir, rightStudioDir)), 22.0);
+                float specLower = pow(max(0.0, dot(reflDir, lowerStudioDir)), 18.0);
+
+                vec3 iceSpecColor = vec3(0.84, 0.99, 0.97);
+                vec3 grazingTealColor = mix(vec3(0.37, 0.92, 0.83), vec3(0.58, 0.77, 0.99), smoothstep(0.0, -1.2, vAssoViewOffset.y));
+                vec3 violetRimColor = vec3(0.76, 0.54, 0.99);
+
+                outgoingLight += sideMask * (
+                  0.18 * fresnelRim * lowerRightWeight * grazingTealColor +
+                  0.26 * specRight * iceSpecColor +
+                  0.16 * specLower * mix(grazingTealColor, violetRimColor, 0.42)
+                );
+
+                // Sub-bloom soft-knee ceiling: the engine's bloom thresholds at 0.42
+                // linear luminance, so compress above 0.25 toward an asymptote of 0.385.
+                float outLum = dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722));
+                if (outLum > 0.25) {
+                  float compressedLum = 0.25 + 0.135 * tanh((outLum - 0.25) / 0.135);
+                  outgoingLight *= compressedLum / max(outLum, 1e-4);
+                }
+                #include <opaque_fragment>`
+              );
+            };
+          }
+
+          mesh.material = mat;
           mesh.visible = false;
           if (isCage) return; // exactness reference only, never rendered
 
@@ -354,7 +444,8 @@ export class ManifoldGlbArticulator {
             mesh,
             material: mesh.material as THREE.MeshPhysicalMaterial,
             wireMaterial: wire.material as THREE.LineBasicMaterial,
-            nodes
+            nodes,
+            shaderUniforms
           });
           frames.set(order, list);
         });
@@ -398,15 +489,21 @@ export class ManifoldGlbArticulator {
           for (const rec of list) rec.mesh.scale.setScalar(scale);
         }
 
-        // Contained lights: MOD-05 lighting environment for premium jewel facet definition.
-        // A luminous key light catches moving specular facets; a lilac-violet rim
-        // accentuates silhouettes and depth against the starfield. Scoped strictly
-        // to this group so modules 1-4 remain untouched.
-        const fill = new THREE.PointLight(0xccfbf1, 14, 28, 2);
-        fill.position.set(3.5, 4.0, 5.5);
+        // Contained light rig (recovered from the archived Argon build):
+        // teal key, violet rim, and an orbiting grazing light that rakes the side facets.
+        const rig = new THREE.Group();
+        rig.name = 'AssociahedronLightRig';
+        rig.rotation.order = 'YXZ';
+        const fill = new THREE.PointLight(0xccfbf1, 12, 28, 2);
+        fill.position.set(3.6, 4.4, 5.6);
         const rim = new THREE.PointLight(0xc084fc, 8.5, 28, 2);
-        rim.position.set(-4.5, -2.5, -4.0);
-        model.add(fill, rim);
+        rim.position.set(-4.6, -2.4, -3.8);
+        const grazing = new THREE.PointLight(0x67e8f9, 7.5, 24, 2);
+        grazing.position.set(5.6, -2.4, 2.4);
+        rig.add(fill, rim, grazing);
+        model.add(rig);
+        this.assoLightRig = rig;
+        this.assoGrazingLight = grazing;
 
         this.assoFrames = frames;
         this.assoGlbGroup = model;
@@ -458,8 +555,18 @@ export class ManifoldGlbArticulator {
     // The GLB carries no facet ids, so no single facet is selected (deferred).
     const active = frames[idx];
     const focus = state.facetResidueFocus;
-    active.material.emissiveIntensity = 0.20 + focus * 0.18 + 0.02 * Math.sin(elapsed * 3.2);
-    active.wireMaterial.opacity = 0.55 + focus * 0.35;
+        active.material.emissiveIntensity = 0.11 + focus * 0.14 + 0.015 * Math.sin(elapsed * 3.2);
+    active.wireMaterial.opacity = 0.62 + focus * 0.3;
+    active.shaderUniforms.uAssoSweepPhase.value = elapsed + state.projectionSweep * Math.PI;
+
+    if (this.assoGrazingLight) {
+      const orbit = -elapsed * 0.34 + 0.42;
+      this.assoGrazingLight.position.set(
+        5.2 * Math.cos(orbit),
+        -2.1 + 0.65 * Math.sin(elapsed * 0.48),
+        3.2 + 1.8 * Math.sin(orbit)
+      );
+    }
   }
 
   public updateObserverManifold(elapsed: number, state: SimulationUniformState): void {

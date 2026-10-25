@@ -195,7 +195,7 @@ export function createAssociahedronScene(): AssociahedronHandles {
         float latLines = smoothstep(0.006, 0.0, abs(fract(asin(clamp(d.y, -1.0, 1.0)) * 3.8197) - 0.5) - 0.489);
         float lonLines = smoothstep(0.006, 0.0, abs(fract(atan(d.z, d.x) * 1.9098) - 0.5) - 0.490);
         float eqRing = smoothstep(0.004, 0.0, bandDist);
-        float gridMask = (latLines + lonLines) * (0.35 + 0.65 * horizonBand) * 0.020 + eqRing * 0.028;
+        float gridMask = (latLines + lonLines) * (0.35 + 0.65 * horizonBand) * 0.045 + eqRing * 0.065;
 
         // Dark contrast well directly behind the crystal silhouette so facets pop cleanly
         vec2 viewAngle = vViewPos.xy / max(-vViewPos.z, 1.0);
@@ -205,7 +205,7 @@ export function createAssociahedronScene(): AssociahedronHandles {
         vec3 indigoBand = vec3(0.038, 0.024, 0.088) * (secondaryBand + 0.55 * cloudPocket * horizonBand);
         vec3 gridCol = vec3(0.28, 0.82, 0.76) * gridMask;
         vec3 col = (tealNebula + indigoBand) * (0.25 + 0.75 * centerWell) + gridCol * centerWell;
-        float alpha = clamp((horizonBand * 0.17 + secondaryBand * 0.13 + gridMask) * (0.30 + 0.70 * centerWell), 0.0, 0.22);
+        float alpha = clamp((horizonBand * 0.24 + secondaryBand * 0.18 + gridMask) * (0.30 + 0.70 * centerWell), 0.0, 0.32);
         gl_FragColor = vec4(col, alpha);
       }
     `,
