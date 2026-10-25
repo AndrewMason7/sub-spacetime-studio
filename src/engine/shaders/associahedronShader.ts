@@ -106,6 +106,40 @@ export function createAssociahedronScene(): AssociahedronHandles {
   // carried by the material + edge tint in updateAssociahedronManifold only.
   poleRing.visible = false;
 
+  // subtle ambient contact aura on the ground plane to bed the object in space
+  const contactGeo = new THREE.PlaneGeometry(9.0, 9.0);
+  const contactMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: { value: new THREE.Color(0x5eead4) }
+    },
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uColor;
+      varying vec2 vUv;
+      void main() {
+        float d = length(vUv - vec2(0.5)) * 2.0;
+        if (d > 1.0) discard;
+        float falloff = smoothstep(1.0, 0.0, d);
+        float alpha = falloff * falloff * 0.07;
+        gl_FragColor = vec4(uColor, alpha);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
+  const contactPlane = new THREE.Mesh(contactGeo, contactMat);
+  contactPlane.name = 'AssociahedronContactGlow';
+  contactPlane.rotation.x = -Math.PI / 2;
+  contactPlane.position.y = -3.2;
+  group.add(contactPlane);
+
   return {
     group,
     vertexMat,

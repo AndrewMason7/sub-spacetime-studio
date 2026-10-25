@@ -269,19 +269,19 @@ export class ManifoldGlbArticulator {
           const accent = accents[order];
           const isCage = mesh.name.includes('_Cage');
 
-          // Diffuse-forward dielectric. Metalness + high gloss on a starfield read
-          // as a near-black ghost (measured: object coverage fell 11.9% -> 1.3% of
-          // the viewport), so facets are lit diffusely with a modest self-glow.
+          // Diffuse-forward dielectric with jewel clearcoat and iridescent sheen.
+          // Lit with controlled specular gloss, balanced emissive core, and crisp
+          // facet differentiation.
           mesh.material = new THREE.MeshPhysicalMaterial({
             color: isCage ? 0x94a3b8 : accent,
             emissive: isCage ? 0x0f172a : accent,
-            emissiveIntensity: isCage ? 0.05 : 0.32,
-            metalness: 0.15,
-            roughness: 0.34,
-            clearcoat: 0.65,
-            clearcoatRoughness: 0.18,
-            iridescence: 0.3,
-            iridescenceIOR: 1.25,
+            emissiveIntensity: isCage ? 0.05 : 0.22,
+            metalness: 0.08,
+            roughness: 0.28,
+            clearcoat: 0.85,
+            clearcoatRoughness: 0.12,
+            iridescence: 0.45,
+            iridescenceIOR: 1.33,
             flatShading: true,
             transparent: false,
             depthWrite: true,
@@ -290,15 +290,23 @@ export class ManifoldGlbArticulator {
           mesh.visible = false;
           if (isCage) return; // exactness reference only, never rendered
 
-          // glTF cannot carry edge-only meshes, so the lattice is generated here.
-          // 0.2° (not 1°) so near-flat ridges of the projected hulls are kept:
-          // at 1° EdgesGeometry silently dropped real edges on 5 frames.
+          // Edge lattice: for exact n=4 cage, extract the 21 authentic cage edges
+          // from AssoN4_Cage to avoid bevel triangulation. For n=5/6, generate
+          // with ASSO_EDGE_THRESHOLD_DEG = 0.2° to preserve all true shadow ridges.
+          let wireGeo: THREE.BufferGeometry;
+          const cageMesh = order === 4 ? (model.getObjectByName('AssoN4_Cage') as THREE.Mesh | null) : null;
+          if (order === 4 && cageMesh && cageMesh.geometry) {
+            wireGeo = new THREE.EdgesGeometry(cageMesh.geometry, 1.0);
+          } else {
+            wireGeo = new THREE.EdgesGeometry(mesh.geometry, ASSO_EDGE_THRESHOLD_DEG);
+          }
+
           const wire = new THREE.LineSegments(
-            new THREE.EdgesGeometry(mesh.geometry, ASSO_EDGE_THRESHOLD_DEG),
+            wireGeo,
             new THREE.LineBasicMaterial({
               color: accent,
               transparent: true,
-              opacity: 0.9,
+              opacity: 0.75,
               depthWrite: false,
               toneMapped: false
             })
@@ -306,16 +314,21 @@ export class ManifoldGlbArticulator {
           wire.name = `${mesh.name}_Wire`;
           mesh.add(wire);
 
-          // Vertex markers sit exactly on the hull's distinct vertex positions.
-          // Small instanced octahedra, NOT additive point sprites: the sprites
-          // bloomed into cotton balls that hid the geometry they were marking.
+          // Vertex markers: placed on the genuine polytope vertices (14 for n=4 via cage,
+          // or distinct positions of each convex hull for n=5/6).
+          // Styled as luminous faceted octahedra (vertex gems) with controlled tone mapping.
           let nodes: THREE.InstancedMesh | null = null;
-          const nodePositions = distinctPositions(mesh.geometry);
+          const nodePositions = (order === 4 && cageMesh && cageMesh.geometry)
+            ? distinctPositions(cageMesh.geometry)
+            : distinctPositions(mesh.geometry);
           const nodeCount = nodePositions.length / 3;
           if (nodeCount > 0) {
             nodes = new THREE.InstancedMesh(
-              new THREE.OctahedronGeometry(0.05, 0),
-              new THREE.MeshBasicMaterial({ color: accent }),
+              new THREE.OctahedronGeometry(0.048, 0),
+              new THREE.MeshBasicMaterial({
+                color: accent,
+                toneMapped: false
+              }),
               nodeCount
             );
             nodes.name = `${mesh.name}_Nodes`;
@@ -377,12 +390,14 @@ export class ManifoldGlbArticulator {
           for (const rec of list) rec.mesh.scale.setScalar(scale);
         }
 
-        // Contained lights: MOD-05 is the only module whose surface depends on
-        // diffuse shading. Scoped to the group so no other module changes.
-        const fill = new THREE.PointLight(0xe0f2fe, 18, 26, 2);
-        fill.position.set(2.5, 3.2, 6.0);
-        const rim = new THREE.PointLight(0xa78bfa, 10, 26, 2);
-        rim.position.set(-4.0, -2.5, -4.0);
+        // Contained lights: MOD-05 lighting environment for premium jewel facet definition.
+        // A luminous key light catches moving specular facets; a lilac-violet rim
+        // accentuates silhouettes and depth against the starfield. Scoped strictly
+        // to this group so modules 1-4 remain untouched.
+        const fill = new THREE.PointLight(0xccfbf1, 14, 28, 2);
+        fill.position.set(3.5, 4.0, 5.5);
+        const rim = new THREE.PointLight(0xc084fc, 8.5, 28, 2);
+        rim.position.set(-4.5, -2.5, -4.0);
         model.add(fill, rim);
 
         this.assoFrames = frames;
@@ -435,8 +450,8 @@ export class ManifoldGlbArticulator {
     // The GLB carries no facet ids, so no single facet is selected (deferred).
     const active = frames[idx];
     const focus = state.facetResidueFocus;
-    active.material.emissiveIntensity = 0.30 + focus * 0.22 + 0.03 * Math.sin(elapsed * 3.2);
-    active.wireMaterial.opacity = 0.35 + focus * 0.45;
+    active.material.emissiveIntensity = 0.20 + focus * 0.18 + 0.02 * Math.sin(elapsed * 3.2);
+    active.wireMaterial.opacity = 0.55 + focus * 0.35;
   }
 
   public updateObserverManifold(elapsed: number, state: SimulationUniformState): void {
