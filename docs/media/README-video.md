@@ -6,6 +6,9 @@
 |---|---|---|
 | `associahedron-tour.mp4` | 1080×1080, 894 frames, **29.93 s**, 29.9 fps, H.264 High, yuv420p, range tv, bt709, **8.0 MB**, no audio, faststart | the hero — one full revolution |
 | `associahedron-tour-fast.mp4` | 1080×1080, 898 frames, **14.97 s**, 60 fps, 5.4 MB | same turn at 2× — better for a feed |
+| `associahedron-orbit.mp4` | 1920×1080, 390 frames, **13.0 s**, 30 fps, 9.1 MB | **camera orbits a still object — seamless loop** (seam 1.87/255 vs 1.77 adjacent) |
+| `associahedron-orbit-poster.png` | 1920×1080 still | landscape poster |
+| `associahedron-orbit-contact-sheet.png` | 6 frames across the orbit | QC of angles |
 | `associahedron-poster.png` | 1080×1080 still (t=15 s) | tweet image / thumbnail |
 | `associahedron-contact-sheet.png` | 5 frames sampled across the turn | QC of angles |
 
@@ -54,6 +57,37 @@ Tooling: `scripts/capture-mac-cdp.py` (screencast capture), `scripts/capture-ass
 - Encoding is two-stage: crop+scale on the Mac (`crf 17`), then range normalisation on the
   VPS (`scale=in_range=full:out_range=tv`, `crf 18`) because screencast JPEGs are full-range
   and land as `yuvj420p`/`pc`. X wants `yuv420p`/`tv`; the final file is tagged `bt709`.
+
+## Camera-orbit turntable (the landscape loop)
+
+`associahedron-orbit.mp4` is a different capture from the two above: the **object is frozen**
+(`engine.isPaused = true`, auto-rotate off, OrbitControls disabled) and the **camera** is placed
+by hand each frame:
+
+```js
+cam.position.set(sin(theta) * R, H, cos(theta) * R);   // theta = 2*pi*i/N
+cam.lookAt(target);
+```
+
+Two consequences, both good:
+
+1. **Every parameter is a function of `theta` alone, so the loop is exact by construction** —
+   frame `N` *is* frame `0`. No phase alignment ceremony. Measured seam **1.87/255** against
+   **1.77/255** between adjacent frames, i.e. the loop point is indistinguishable from ordinary
+   motion.
+2. **It sidesteps the black-frame bug entirely.** That bug was `canvas.toDataURL()` on a WebGL
+   canvas without `preserveDrawingBuffer: true`: after compositing, the drawing buffer is cleared
+   and the read-back is black. Frames here come from CDP `Page.captureScreenshot`, which
+   composites properly — 0 black frames of 390 (`signalstats` min YAVG 27.6).
+
+Capture cost: 390 frames at 1920×1080 took **112 s** (3.5 fps capture rate). The pose is computed
+in Python, so slow capture does not affect smoothness — only wall-clock time.
+
+Script: `scripts/capture-orbit-turntable.py` (`--width --height --frames --radius --cam-height`).
+
+Frame 0 and the last frame differ by one 1/30 s step, so a looping player joins them without a
+visible cut. Verified: 390/390 distinct frames, 0 decode errors, subject 23–47 % of width with no
+clipping.
 
 ## Rejected: the deterministic loop version
 
