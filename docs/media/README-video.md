@@ -4,17 +4,15 @@
 
 | File | Spec | Use |
 |---|---|---|
-| `associahedron-tour.mp4` | 1080×1080, 894 frames, **29.93 s**, 29.9 fps, H.264 High, yuv420p (tv), **7.3 MB**, no audio, faststart | one full revolution in real time |
+| `associahedron-tour.mp4` | 1080×1080, 894 frames, **29.93 s**, 29.9 fps, H.264 High, yuv420p, range tv, bt709, **8.0 MB**, no audio, faststart | the hero — one full revolution |
 | `associahedron-tour-fast.mp4` | 1080×1080, 898 frames, **14.97 s**, 60 fps, 5.4 MB | same turn at 2× — better for a feed |
-| `associahedron-poster.png` | 1080×1080 still (frame at t=15 s) | tweet image / thumbnail |
-| `associahedron-contact-sheet.png` | 5 frames sampled across the turn | quick QC of angles |
+| `associahedron-poster.png` | 1080×1080 still (t=15 s) | tweet image / thumbnail |
+| `associahedron-contact-sheet.png` | 5 frames sampled across the turn | QC of angles |
 
-Both videos: no UI chrome, crystal 47–69 % of frame width, fully inside frame at every
-sampled timestamp, zero decode errors.
+Both videos: no UI chrome, crystal 50–66 % of frame width, fully inside frame at every
+sampled timestamp, **0 black frames** (min per-frame YAVG 42.9), **0 decode errors**.
 
 ## Why it was shot on the Mac and not the VPS
-
-Three capture routes were tried:
 
 1. **VPS + Xvfb + `ffmpeg -f x11grab`** — FAILED, silently. Chrome in Xvfb decides its
    window is occluded and pauses `requestAnimationFrame`: 180 frames, all identical
@@ -55,32 +53,38 @@ Tooling: `scripts/capture-mac-cdp.py` (screencast capture), `scripts/capture-ass
 - Crop `1118:1118:280:202` → crystal occupies **59 %** of frame width at its widest pose.
 - Encoding is two-stage: crop+scale on the Mac (`crf 17`), then range normalisation on the
   VPS (`scale=in_range=full:out_range=tv`, `crf 18`) because screencast JPEGs are full-range
-  and land as `yuvj420p`/`pc`. X wants `yuv420p`/`tv`.
+  and land as `yuvj420p`/`pc`. X wants `yuv420p`/`tv`; the final file is tagged `bt709`.
 
-## Deterministic alternative (`capture-associahedron-video.py`)
+## Rejected: the deterministic loop version
 
-The engine exposes `window.__engine` with `isPaused`, `setSimTime(t)` and `update()`, plus
-`renderer.domElement.toDataURL()`. That allows exact frame stepping instead of sampling a
-live clock: 857 frames at 30 fps over one revolution, with the loop seam chosen so
-`sin(0.31·t)` matches at both ends (measured frame-0 vs frame-856 difference 1.39/255).
+`scripts/capture-associahedron-video.py` steps the engine (`isPaused`, `setSimTime(t)`,
+`update()`, `canvas.toDataURL()`) and can hit a mathematically perfect loop seam: choosing
+start phase `t0 = (π/11)/0.31` makes `rotation.x` match at both ends while `rotation.y`
+completes exactly 2π. Measured seam **1.67/255**, against 27/255 for the best window of the
+real-time cut — the Y spin and the X nod have different periods, so they never re-align in a
+live capture.
 
-Trade-off: it is deterministic and loop-perfect, but each frame is a PNG `toDataURL` +
-Playwright round trip, which costs **~0.9 fps** on software GL — about 16 minutes for a
-full revolution. The screencast route is 30× faster and is what the shipped files use.
+It was **not shipped**: that render contained **83 black frames out of 857** (~10 %, in runs
+up to 0.8 s) at 5.2 s, 13.9 s, 14.3 s, 17.8 s, 22.7 s, 23.2 s, 24.7 s and 27.3 s. Its own
+verification missed them because it sampled only four timestamps and all four happened to
+land on good frames. The real-time cut has zero.
 
 ## Verification performed
 
-- `ffprobe`: 1080×1080, High profile, yuv420p, tv range, 894 frames, 29.93 s, 7.3 MB.
+- `ffprobe`: 1080×1080, High, yuv420p, tv range, bt709, 894 frames, 29.93 s, 8.0 MB, 2.15 Mb/s.
 - `ffmpeg -v error -i … -f null -` → **0 decode errors**.
-- `-vf mpdecimate` → **894 of 894 distinct frames** (real motion, not a still).
-- Mean absolute pixel difference between samples 7.5 s apart: **15.45, 16.14, 19.57, 14.68**.
-- Four timestamps checked for clipping: object stays inside frame, 47–69 % width.
+- `signalstats` YAVG per frame → **0 frames at or below 16.5** (min 42.9). Black in YUV is 16,
+  so an `YAVG < 8` test would have passed a video made entirely of black frames.
+- `-vf mpdecimate` → 894 frames, real motion (per-frame diffs 15.45, 16.14, 19.57, 14.68
+  across 7.5 s gaps).
+- Five sampled timestamps: no clipping, object 50–66 % of frame width.
 
 ## Gotchas worth keeping
 
+- **Black in YUV is 16, not 0.** Use `signalstats` and test `YAVG <= 16.5`.
 - Never claim a capture worked without an `mpdecimate` count or a per-frame diff. A frozen
   clip passes every cosmetic check.
 - Seek with `ffmpeg -i file.mp4 -ss <t>` (output seeking). `-ss <t> -i file.mp4` can return
   the same keyframe for every sample and make moving video look static.
 - Two agents capturing at once will clobber a shared `/tmp/<name>` path. Parameterise the
-  output directory.
+  output directory — this cost 624 frames on the first attempt.
