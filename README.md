@@ -2,14 +2,14 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-00e5ff.svg)](./LICENSE)
 [![Engine: WebGL2 / GLSL](https://img.shields.io/badge/WebGL2%20%2F%20GLSL-60%20FPS%20ACES%20Filmic-38bdf8.svg)](https://spacetime.clipboard-share.com/)
-[![Geometry: Blender 5.2 LTS](https://img.shields.io/badge/Blender%205.2%20LTS-19%20Sub--Meshes%20%2B%20Shape%20Keys-f59e0b.svg)](./scripts/generate_v7_blender_manifolds.py)
+[![Geometry: Blender 5.2 LTS](https://img.shields.io/badge/Blender%205.2%20LTS-5%20GLB%20Manifolds%20%2B%2049%20Loday%20Hulls-f59e0b.svg)](./scripts/generate_v8_associahedron.py)
 [![Verification: Lean 4 / Mathlib4](https://img.shields.io/badge/Lean%204%20AST-2%2C924%20Modules%20Audited-10b981.svg)](./src/data/leanRepositoryFiles.ts)
 [![Audio: Procedural Ambient & Foley](https://img.shields.io/badge/Audio-WebAudio%20%2B%20Convolution%20Reverb-ec4899.svg)](./scripts/generate_studio_audio.py)
 [![Built With: Gemini 4 Argon](https://img.shields.io/badge/Built%20With-Gemini%204%20Argon-a855f7.svg)](https://spacetime.clipboard-share.com/)
 
-> **An interactive 60 FPS WebGL2 / GLSL Differential Geometry & Lean 4 Formal Verification Workstation** engineered to visualize, manipulate, and formally audit frontier theorems in **Quantum Gravity**, **Riemannian 4-Manifold Topology**, **Random Planar Map Scaling Limits**, **Holographic Quantum Error Correction**, and **Algebraic Cycle Counterexamples**.
+> **An interactive 60 FPS WebGL2 / GLSL Differential Geometry & Lean 4 Formal Verification Workstation** engineered to visualize, manipulate, and formally audit frontier theorems in **Quantum Gravity**, **Riemannian 4-Manifold Topology**, **Random Planar Map Scaling Limits**, **Holographic Quantum Error Correction**, **Algebraic Cycle Counterexamples**, and **ABHY Positive Geometry (The Associahedron)**.
 
-**Live Interactive Workstation:** **[https://sub-spacetime.ai.studio/](https://sub-spacetime.ai.studio/)**
+**Live Interactive Workstation:** **[https://sub-spacetime.ai.studio/](https://sub-spacetime.ai.studio/)** · **Public Mirror:** **[https://sub-spacetime.clipboard-share.com/](https://sub-spacetime.clipboard-share.com/)**
 
 ---
 
@@ -139,7 +139,17 @@ I_new = I(f1) - m = -2m != 0
 Whereas `M01`–`M04` render differential-geometric metaphors of higher-dimensional physics, `M05` renders an **exact combinatorial polytope**:
 - **Loday's Integer Coordinates (2004):** Vertices correspond to plane binary trees $T$ with $n$ internal nodes (or triangulations of a convex $(n+2)$-gon). Labelling internal nodes $1 \dots n$ in in-order, node $i$ receives coordinate $x_i(T) = L_i(T) \cdot R_i(T)$ (left subtree leaf count $\times$ right subtree leaf count). Every vertex satisfies $\sum_{i=1}^n x_i = \frac{n(n+1)}{2}$, so the Stasheff polytope $K_n$ is $(n-1)$-dimensional inside that hyperplane.
 - **Exact 3D at `n = 4` vs. Projected 4D/5D Shadows at `n = 5, 6`:** At $n = 4$ ($C_4 = 14$ vertices, 21 edges, 9 facets, $\chi = 2$), the hyperplane is 3-dimensional, so orthonormal basis projection into $\mathbb{R}^3$ is an **exact isometry** (maximum distortion $1.8 \times 10^{-15}$ in the float64 bake). At $n = 5$ ($42$ vertices in $\mathbb{R}^5$) and $n = 6$ ($132$ vertices in $\mathbb{R}^6$), the polytope is 4D/5D; sweeping the projection angle changes which combinatorial vertices lie on the 3D shadow boundary, so `associahedron.glb` bakes **24 independent convex hulls per order** (`AssoN5_Proj00..23`, `AssoN6_Proj00..23`).
-- **ABHY Canonical Form:** In the Arkani-Hamed–Bai–He–Yan positive-geometry program, the canonical form $\Omega(K_n)$ of this polytope is the tree-level bi-adjoint $\phi^3$ scattering amplitude, with each facet corresponding to a planar propagator pole.
+- **ABHY Canonical Form & Jewelled Facet Optics:** In the Arkani-Hamed–Bai–He–Yan positive-geometry program, the canonical form $\Omega(K_n)$ of this polytope is the tree-level bi-adjoint $\phi^3$ scattering amplitude, with each facet corresponding to a planar propagator pole. The viewport renders each facet with an intra-facet tangent-frame dispersion normal (`onBeforeCompile` in `ManifoldGlbArticulator.ts`), two travelling studio light strips, a soft-knee luminance compressor (capped at `0.385` below the `0.42` bloom threshold), instanced octahedron vertex gems, a deep-field celestial dome, and smooth exponential color interpolation across orders (`n = 4` `#5eead4` Seafoam Teal $\leftrightarrow$ `n = 5` `#93c5fd` Ice Sapphire $\leftrightarrow$ `n = 6` `#d8b4fe` Lilac Harmonic).
+
+![MOD-05 Associahedron Director's Cut Contact Sheet](./docs/media/associahedron-director-cut-contact-sheet.png)
+
+| Video / Media Artifact (`docs/media/`) | Spec | Description |
+| :--- | :--- | :--- |
+| **[`associahedron-director-cut.mp4`](./docs/media/associahedron-director-cut.mp4)** | `1920×1080` · 15.0s · 30 fps · H.264 High `bt709` (`13.0 MB`) | **Director's Cut Act V (16:9 Widescreen Seamless Loop):** Exact $n = 4$ 3D Loday crystal (`V14 E21 F9`) with full multi-axis X/Y/Z tumbling, 360° orbital crane sweep, and $\Omega: 0.15 \to 0.92 \to 0.15$ pole-sheen sweep (seam `3.35/255` vs `3.34` adjacent). |
+| **[`associahedron-director-cut-square.mp4`](./docs/media/associahedron-director-cut-square.mp4)** | `1080×1080` · 15.0s · 30 fps · H.264 High `bt709` (`7.9 MB`) | **Director's Cut Act V (1:1 Square Feed Seamless Loop):** Native square-viewport capture of the exact Act V choreography (seam `3.86/255` vs `3.85` adjacent). |
+| **[`associahedron-orbit.mp4`](./docs/media/associahedron-orbit.mp4)** | `1920×1080` · 13.0s · 30 fps · H.264 High `bt709` (`9.1 MB`) | **360° Camera-Orbit Turntable (Seamless Loop):** Camera orbits a paused $n = 4$ crystal (`seam 1.87/255`). |
+| **[`associahedron-tour.mp4`](./docs/media/associahedron-tour.mp4)** | `1080×1080` · 29.9s · 29.9 fps · H.264 High `bt709` (`8.0 MB`) | **Real-Time 360° Turntable:** Full $2\pi / 0.22 = 28.6\text{s}$ live revolution captured via CDP `Page.startScreencast`. |
+| **[`associahedron-tour-fast.mp4`](./docs/media/associahedron-tour-fast.mp4)** | `1080×1080` · 15.0s · 60 fps · H.264 High `bt709` (`5.4 MB`) | **2× Social Feed Cut:** 60 fps double-speed turntable for social feeds. |
 
 ---
 
@@ -155,35 +165,57 @@ sub-spacetime-studio/
 |   |   |-- swell_ignition.mp3               # M01/M03 energetic chord swell & chime foley
 |   |   |-- swell_phase.mp3                  # M02 phase-transition arpeggiated swell
 |   |   \-- swell_shatter.mp3                # M04 Lagrangian cusp shatter resonance
-|   \-- models/                              # 4 multi-component Blender 5.2.2 LTS .glb manifolds (19 sub-meshes)
+|   \-- models/                              # 5 Blender 5.2 LTS .glb manifolds + verified JSON sidecar
 |       |-- einstein_saddle.glb              # M01: CliffordCore + 5 Hopf Villarceau Rings (Singularity_Collapse)
 |       |-- fkcrt_manifold.glb               # M02: LQGSurface + 6 CRT Dendrite Spines (Fractal_Roughness)
 |       |-- cks_horizon_funnel.glb           # M03: CKSFunnel + KerrErgosphere + PhotonRing3M (Ergo_Bulge)
-|       \-- k3_calabi_yau.glb                # M04: K3QuinticBrane + 3 CuspLocus Rings (Cusp_Shatter)
+|       |-- k3_calabi_yau.glb                # M04: K3QuinticBrane + 3 CuspLocus Rings (Cusp_Shatter)
+|       |-- associahedron.glb                # M05: Exact n=4 Loday cage + 48 true convex-hull projected frames (n=5, 6)
+|       \-- associahedron.json               # M05: Audited V/E/F/chi invariants & float64 isometry metrics
+|-- docs/
+|   |-- guides/
+|   |   \-- headless-webgl-video-capture.md  # Headless CDP video capture & 3-gate verification guide
+|   \-- media/                               # Verified H.264 bt709 social videos, posters & contact sheets
+|       |-- README-video.md                  # Capture recipes, seam metrics & verification log
+|       |-- associahedron-director-cut.mp4   # 1920x1080 15s 30fps Director's Cut Act V seamless loop
+|       |-- associahedron-director-cut-square.mp4 # 1080x1080 15s 30fps Director's Cut Act V square loop
+|       |-- associahedron-orbit.mp4          # 1920x1080 13s 30fps camera-orbit seamless loop
+|       |-- associahedron-tour.mp4           # 1080x1080 30s real-time turntable
+|       \-- associahedron-tour-fast.mp4      # 1080x1080 15s 60fps 2x social feed cut
 |-- scripts/
 |   |-- generate_studio_audio.py             # Python WebAudio stereo synthesis (warm pads, felt piano, convolution reverb)
 |   |-- generate_v6_blender_manifolds.py     # Procedural differential geometry v6 generator
-|   \-- generate_v7_blender_manifolds.py     # Headless Blender 5.2.2 LTS procedural generator (COLOR_0 + 4 Shape Keys)
+|   |-- generate_v7_blender_manifolds.py     # Headless Blender 5.2.2 LTS procedural generator (COLOR_0 + 4 Shape Keys)
+|   |-- generate_v8_associahedron.py         # Headless Blender 5.2.3 LTS Loday Associahedron generator + hull verifier
+|   |-- gen-associahedron-invariants.mjs     # Generates src/data/associahedronInvariants.ts from associahedron.json
+|   |-- verify-associahedron.mjs             # Independent Node/Three.js ConvexHull & Euler characteristic audit
+|   |-- capture-director-m05.py              # CDP deterministic Director's Cut M05 360-degree seamless loop capture
+|   |-- capture-orbit-turntable.py           # CDP camera-orbit turntable capture
+|   |-- capture-mac-cdp.py                   # CDP Page.startScreencast real-time capture
+|   \-- verify-video.py                      # 3-gate video verifier (mpdecimate motion, YAVG<=16.5 black check, bbox framing)
 |-- src/
 |   |-- components/
-|   |   |-- TopMenuBar.tsx                   # Workstation Deck, Scene Matrix (M01-M04), Audio & Tour triggers
+|   |   |-- TopMenuBar.tsx                   # Workstation Deck, Scene Matrix (M01-M05), Audio & Tour triggers
 |   |   |-- LeftParameterDock.tsx            # Color-zoned DAW parameter channels, Tektronix Scope & Repo Vault
-|   |   |-- Viewport3DStage.tsx              # Open-Stage Cinema HUD, KaTeX formula drawer, and camera controls
+|   |   |-- Viewport3DStage.tsx              # Open-Stage Cinema HUD, interactive Tour Scrubber, KaTeX drawer & camera controls
 |   |   |-- RightLeanIDE.tsx                 # Shiki Lean 4 Kernel Inspector & Amber Scalpel Verification Audit
 |   |   |-- BottomTimelineDock.tsx           # 60 FPS simulation transport, speed multipliers & timeline scrubber
 |   |   \-- CommandPaletteModal.tsx          # Instant Cmd/Ctrl+K fuzzy command & theorem launcher
 |   |-- data/
+|   |   |-- associahedronInvariants.ts       # Auto-generated Loday V/E/F/chi & projection frame lookup tables
+|   |   |-- associahedronFrameAudit.ts       # Pure projection-sweep -> hull frame index resolver
 |   |   |-- theoremsCatalog.ts               # Formal mathematical metadata, LaTeX equations & DAW slider definitions
 |   |   \-- leanRepositoryFiles.ts           # Embedded Lean 4 source modules from openai/math & counter-proofs
 |   |-- engine/
 |   |   |-- QuantumSpacetimeEngine.ts        # Three.js WebGL2 renderer, ACES Filmic postprocessing & orbital camera
-|   |   |-- ManifoldGlbArticulator.ts        # 60 FPS physical GLB sub-mesh articulator & Shape-Key morph controller
+|   |   |-- ManifoldGlbArticulator.ts        # 60 FPS physical GLB sub-mesh articulator, Loday hull stepper & Shape-Key morphs
 |   |   |-- AudioSynthesizer.ts              # Singleton WebAudio engine with global registry & hard-mute guarantee
-|   |   \-- shaders/                         # Custom GLSL vertex/fragment shaders for M01, M02, M03, and M04
+|   |   \-- shaders/                         # Custom GLSL vertex/fragment shaders for M01-M05
 |   |       |-- observerHilbertShader.ts     # M01: Observer Hilbert density, wormhole filaments & curvature
 |   |       |-- fkcrtPhaseShader.ts          # M02: FK cluster percolation & CRT dendrite excursion
 |   |       |-- willowHologramShader.ts      # M03: Bondi hyperboloidal embedding & 105-qubit surface code
-|   |       \-- k3RetractionShader.ts        # M04: Calabi-Yau Fermat slice & crimson Lagrangian shatter
+|   |       |-- k3RetractionShader.ts        # M04: Calabi-Yau Fermat slice & crimson Lagrangian shatter
+|   |       \-- associahedronShader.ts       # M05: Deep-field celestial dome, astrometric star stream & optical stage reticle
 |   |-- hooks/
 |   |   |-- useDirectorTour.ts               # v9.0 360-Degree Orbital Crane, X/Y/Z Manifold Tumbling & Infinite Loop engine
 |   |   \-- useKeyboardShortcuts.ts          # Comprehensive desktop keyboard shortcut orchestrator
@@ -210,16 +242,17 @@ sub-spacetime-studio/
 
 ---
 
-### B. Blender 5.2.2 LTS Procedural Geometry Pipeline
+### B. Blender 5.2 LTS Procedural Geometry Pipeline
 
-All four `.glb` assets in `public/models/` are generated deterministically via [`scripts/generate_v7_blender_manifolds.py`](./scripts/generate_v7_blender_manifolds.py):
+All five `.glb` assets in `public/models/` are generated deterministically via [`scripts/generate_v7_blender_manifolds.py`](./scripts/generate_v7_blender_manifolds.py) (`M01`–`M04`) and [`scripts/generate_v8_associahedron.py`](./scripts/generate_v8_associahedron.py) (`M05`):
 
 1. **`einstein_saddle.glb` (`M01`):** Stereographic Clifford minimal torus (`CliffordCore`) with `Singularity_Collapse` Shape Key + 5 interlocked Villarceau Hopf fibration rings (`HopfRing_0` to `HopfRing_4`).
 2. **`fkcrt_manifold.glb` (`M02`):** High-resolution Liouville Quantum Gravity sphere (`LQGSurface`) with spherical-harmonic `Fractal_Roughness` Shape Key + 6 Golden-Spiral Aldous CRT dendrite spines (`CRTSpine_0` to `CRTSpine_5`).
 3. **`cks_horizon_funnel.glb` (`M03`):** Isometric Flamm-Carter paraboloid (`CKSFunnel`) + oblate `KerrErgosphere` (both with `Ergo_Bulge` Shape Keys) + 3D precessing spherical photon geodesic (`PhotonRing3M`).
 4. **`k3_calabi_yau.glb` (`M04`):** Complex Fermat quintic projection (`K3QuinticBrane`) with radial `Cusp_Shatter` Shape Key + 3 transversal self-intersection rings (`CuspLocus_0` to `CuspLocus_2`).
+5. **`associahedron.glb` + `associahedron.json` (`M05`):** Exact 3D Loday realization at `n = 4` (`AssoN4` + `AssoN4_Cage`, 14 vertices, 21 edges, 9 facets, $\chi = 2$, $1.8 \times 10^{-15}$ float64 isometry) plus 24 independently convex-hulled projection frames each for `n = 5` (`AssoN5_Proj00..23`) and `n = 6` (`AssoN6_Proj00..23`), audited against an independent Three.js `ConvexHull` re-derivation via [`scripts/verify-associahedron.mjs`](./scripts/verify-associahedron.mjs).
 
-Each mesh embeds a procedural **`COLOR_0` byte vertex color attribute** (encoding Gaussian curvature, geodesic radius, and branch orientation) wired directly into Blender's `Principled BSDF` node tree and articulated at 60 FPS by [`ManifoldGlbArticulator.ts`](./src/engine/ManifoldGlbArticulator.ts) with thin-film quantum iridescence (`iridescence: 0.9, IOR: 1.42`).
+Each `M01`–`M04` mesh embeds a procedural **`COLOR_0` byte vertex color attribute** (encoding Gaussian curvature, geodesic radius, and branch orientation) wired directly into Blender's `Principled BSDF` node tree, while `M05` pairs flat-shaded facets with instanced octahedron vertex gems, authentic cage/shadow-ridge wireframes, and an intra-facet tangent-frame studio reflection shader in [`ManifoldGlbArticulator.ts`](./src/engine/ManifoldGlbArticulator.ts).
 
 ---
 
@@ -231,6 +264,7 @@ The workstation leverages custom WebGL2 GLSL shaders operating in tandem with th
 - **`fkcrtPhaseShader.ts` (`M02`):** Computes cluster percolation probabilities and transitions dynamically from conformal 2D planar map metrics to 3D Bessel-bridge excursion branches.
 - **`willowHologramShader.ts` (`M03`):** Generates Carter-Kerr frame-dragging vorticity, hyperboloidal lapse functions, and the 105-qubit Willow surface code boundary syndrome grid.
 - **`k3RetractionShader.ts` (`M04`):** Renders the 6D-to-3D Fermat quintic hypersurface with signed double-point highlight rings, exploding into crimson fracture planes when `sigma_trace < 0`.
+- **`associahedronShader.ts` (`M05`):** Renders a radius-52 deep-field kinematic celestial dome with great-circle astrometric graticules, a 680-star magnitude-stratified Airy-disk stream (with a strict central exclusion well behind the crystal silhouette), and a concentric optical stage calibration reticle.
 
 ---
 
@@ -248,8 +282,8 @@ The audio engine ([`AudioSynthesizer.ts`](./src/engine/AudioSynthesizer.ts)) is 
 ### Director's Cut 360-Degree Orbital Crane Tour
 Clicking the **`TOUR`** button in the top menu bar launches the choreographed 5-Act **Director's Cut Tour** ([`useDirectorTour.ts`](./src/hooks/useDirectorTour.ts)):
 - **Multi-Axis Orbit & Tumbling:** Continuously executes 360-degree orbital sweeps while tumbling each 3D manifold (`M01`–`M05`) across X, Y, and Z axes so the user inspects poles, interiors, and underbellies.
-- **Automated Parameter Choreography (5 Acts, 45s Cycle):** Smoothly tweens physical uniform sliders across all five modules — collapsing `S_Ob -> 0` (`Act I · M01`), crossing `q = 4.0` (`Act II · M02`), spinning the Kerr ergosphere (`Act III · M03`), flipping `sigma_trace = -1` (`Act IV · M04`), and stepping the Loday Associahedron from exact 3D (`n = 4`) through 4D/5D projected shadows (`n = 5, 6`) and back (`Act V · M05`).
-- **Infinite Loop:** Seamlessly cycles across all five acts (`ACT I · M01` through `ACT V · M05`) with interactive act-jump pills, live narration banners, and progress bars until toggled off.
+- **Automated Parameter Choreography (5 Acts, 45s Cycle):** Smoothly tweens physical uniform sliders across all five modules — injecting the Observer worldline `S_Ob -> 10.8` (`Act I · M01`), crossing `q = 4.0 -> 7.4` (`Act II · M02`), spinning up the Kerr ergosphere (`Act III · M03`), flipping `sigma_trace = +1 -> -1` (`Act IV · M04`), and tumbling the exact 14-vertex 3D Loday Associahedron crystal (`n = 4`, `#5eead4` Seafoam Teal) while sweeping the ABHY Canonical-Form Pole Sheen $\Omega: 0.15 \to 0.92 \to 0.18$ (`Act V · M05`) with zero choppy mesh pops.
+- **Interactive Timeline Scrubber & Infinite Loop:** Dragging the top `.director-scrubber-input` progress bar seeks deterministically forward and backward across `[0s, 45s]` via `evaluateTourSnapshot(tMs)`, or click any `ACT I`–`ACT V` pill to jump directly to a module.
 
 ### Shiki Lean 4 AST Line-Synchronization
 The right pane hosts an embedded Lean 4 code inspector ([`RightLeanIDE.tsx`](./src/components/RightLeanIDE.tsx)) powered by **Shiki**:
@@ -258,14 +292,14 @@ The right pane hosts an embedded Lean 4 code inspector ([`RightLeanIDE.tsx`](./s
 
 ### Command Palette (`Cmd/Ctrl + K`)
 Pressing `Cmd + K` or `Ctrl + K` opens the modal command launcher ([`CommandPaletteModal.tsx`](./src/components/CommandPaletteModal.tsx)):
-- Fuzzy-search theorems across all four manifold families.
+- Fuzzy-search theorems across all five manifold families (`M01`–`M05`).
 - Instantly switch scenes, trigger camera angles, toggle auto-rotation, or launch the Director Tour.
 - Jump directly to specific Lean 4 files in the repository vault.
 
 ### Tektronix Oscilloscope & DAW Parameter Channels
 The left instrument rack features:
-- **Tektronix CRT Oscilloscope:** Real-time waveform visualizer displaying physical telemetry metrics (Euler characteristics, Bondi mass aspects, GHP scaling factors, and signed double-point traces).
-- **Color-Zoned DAW Sliders:** Cyan (`M01`), Purple (`M02`), Emerald (`M03`), and Crimson (`M04`) parameter cards with numeric readouts, unit tags, and critical-threshold indicators.
+- **Tektronix CRT Oscilloscope:** Real-time waveform visualizer displaying physical telemetry metrics (Euler characteristics, Bondi mass aspects, GHP scaling factors, signed double-point traces, and Loday polytope $V - E + F = 2$ invariants).
+- **Color-Zoned DAW Sliders:** Cyan (`M01`), Purple (`M02`), Emerald (`M03`), Crimson (`M04`), and Seafoam Teal (`M05`) parameter cards with numeric readouts, unit tags, ARIA accessibility attributes, and critical-threshold indicators.
 - **OpenAI/Math Repository Vault:** Interactive tree view of the audited Lean 4 modules and counter-proof files.
 
 ---
@@ -328,10 +362,24 @@ npm run build
 ```
 
 ### Regenerating 3D Manifolds from Scratch (Blender 5.2 LTS)
-To re-run the procedural differential geometry generator and bake the vertex color / shape key `.glb` assets:
+To re-run the procedural differential geometry generators and bake the `.glb` assets + sidecar invariants:
 
 ```bash
+# M01-M04 manifolds (COLOR_0 vertex attributes + Shape Keys)
 blender -b --python scripts/generate_v7_blender_manifolds.py
+
+# M05 Loday Associahedron (exact n=4 cage + 48 projected n=5/6 convex hulls)
+blender -b --python scripts/generate_v8_associahedron.py
+node scripts/gen-associahedron-invariants.mjs
+node scripts/verify-associahedron.mjs
+```
+
+### Headless WebGL Video Capture & Verification (CDP)
+To capture and verify the Director's Cut M05 Associahedron social videos (`docs/media/`):
+
+```bash
+python3 scripts/capture-director-m05.py --width 1920 --height 1080 --frames 450 --base-dist 5.15 --out /tmp/asso-director-cut
+python3 scripts/verify-video.py docs/media/associahedron-director-cut.mp4 --expect 1920x1080 --samples 8
 ```
 
 ### Regenerating Studio Audio & Foley Stems
@@ -355,6 +403,8 @@ python scripts/generate_studio_audio.py
 3. **Google Quantum AI**, *"Quantum error correction below the surface code threshold"* (105-Qubit Willow Processor) & **Google DeepMind**, *"AlphaQubit 2"*, *Nature* / [`arXiv:2412.06784`](https://arxiv.org/abs/2412.06784) (2024-2025).
 4. **Y. Eliashberg and E. Murphy**, *"Lagrangian caps"*, *Geom. Funct. Anal.* 24, 783-814 (2014).
 5. **D. Aldous**, *"The continuum random tree. I, II, III"*, *Ann. Probab.* 19 (1991).
+6. **J.-L. Loday**, *"Realization of the Stasheff polytope"*, *Arch. Math.* 83, 267-278 (2004).
+7. **N. Arkani-Hamed, Y. Bai, S. He, and G. Yan**, *"Scattering Forms and the Positive Geometry of Kinematics, Color and the Worldsheet"*, *JHEP* 05 (2018) 096, [`arXiv:1711.09102`](https://arxiv.org/abs/1711.09102).
 
 ---
 
